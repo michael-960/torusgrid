@@ -1,0 +1,12 @@
+LICENSE
+README.txt
+pyproject.toml
+setup.cfg
+setup.py
+src/torusgrid/__init__.py
+src/torusgrid/field_util.py
+src/torusgrid/fields.py
+src/torusgrid_michael_960.egg-info/PKG-INFO
+src/torusgrid_michael_960.egg-info/SOURCES.txt
+src/torusgrid_michael_960.egg-info/dependency_links.txt
+src/torusgrid_michael_960.egg-info/top_level.txt

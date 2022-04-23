@@ -3,15 +3,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
 import pyfftw
-from util.math import fourier
-from util.common import overrides
+
+from michael960lib.math import fourier
+from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 import threading
 import tqdm
 import time
 import warnings
 
-
-from .common import IllegalActionError, ModifyingReadOnlyObjectError
 
 
 def real_convolution_2d(psi_k, kernel, NN):
