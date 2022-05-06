@@ -60,22 +60,22 @@ def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place=False):
 
 
 def extend(field: ComplexField2D, Mx: int, My: int, in_place=False):
-    Nx1 = field.Nx * Ny
+    Nx1 = field.Nx * Mx
     Ny1 = field.Ny * My
 
     psi1 = np.zeros((Nx1, Ny1))
 
     for i in range(Nx1):
         for j in range(Ny1):
-            psi1[i,j] = field.psi[i%Nx,j%Ny]
+            psi1[i,j] = field.psi[i%field.Nx,j%field.Ny]
     
     if in_place:
-        field.set_dimensions(field.Lx, field.Ly, Nx1, Ny1)
+        field.set_dimensions(field.Lx*Mx, field.Ly*My, Nx1, Ny1)
         field.set_psi(psi1)
         return
     else:
         field1 = field.copy()
-        field1.set_dimensions(field.Lx, field.Ly, Nx1, Ny1)
+        field1.set_dimensions(field.Lx*Mx, field.Ly*My, Nx1, Ny1)
         field1.set_psi(psi1)
         return field1
 
@@ -281,8 +281,8 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float, le
 
     X, Y = field_a.X, field_a.Y
 
-    xa = model_sol.Lx * 0.25
-    xb = model_sol.Lx * 0.75
+    xa = field_a.Lx * 0.25
+    xb = field_a.Lx * 0.75
 
     bump = (1+np.tanh((X-xa)/width))/2 * (1+np.tanh((-X+xb)/width))/2
 
@@ -293,7 +293,7 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float, le
         return
 
     else:
-        field1 = fielda.copy()
+        field1 = field_a.copy()
         field1.set_psi(psi1)
         return field1
 
