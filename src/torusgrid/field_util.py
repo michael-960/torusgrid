@@ -1,7 +1,10 @@
-from .fields import ComplexField2D, RealField2D, FieldOperationError
-from matplotlib import pyplot as plt
-import numpy as np
 from typing import List
+
+import numpy as np
+from matplotlib import pyplot as plt
+
+from .fields import ComplexField2D, RealField2D, FieldOperationError
+
 
 
 def plot(fields: List[ComplexField2D], cmap='jet', show=True, vlim=(-1, 1), colorbar=True, ncols=4, fig_dims=(4, 4)):

@@ -1,15 +1,16 @@
-import numpy as np
+import threading
+import tqdm
+import time
+import warnings
+import shutil
 
+import numpy as np
 from matplotlib import pyplot as plt
 from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
 import pyfftw
 
 from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
-import threading
-import tqdm
-import time
-import warnings
 
 
 
@@ -44,10 +45,12 @@ class ComplexGrid2D:
         if verbose:
             self.yell('new psi set')
 
-    def save(self, target_npz, verbose=False):
+    def save(self, fname: str, verbose=False):
+        tmp_name = f'{fname}.tmp.file'
         if verbose:
-            self.yell(f'dumping profile data to {target_npz}')
-        np.savez(target_npz, **self.export_state()) 
+            self.yell(f'dumping profile data to {fname}.grid')
+        np.savez(tmp_name, **self.export_state()) 
+        shutil.move(f'{tmp_name}.npz', f'{fname}.grid')
 
     def export_state(self):
         state = {'psi': self.psi.copy()}

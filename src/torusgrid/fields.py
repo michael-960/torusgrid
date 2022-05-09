@@ -1,3 +1,10 @@
+import threading
+import tqdm
+import time
+import warnings
+from typing import List
+import shutil
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
@@ -5,14 +12,7 @@ import pyfftw
 
 from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
-from michael960lib.common import deprecated, experimental
-
-import threading
-import tqdm
-import time
-import warnings
-from typing import List
-
+from michael960lib.common import deprecated, experimental, scalarize
 from .grids import ComplexGrid2D, RealGrid2D
 
 
@@ -83,6 +83,14 @@ class ComplexField2D(ComplexGrid2D):
         plt.show()
 
     @overrides(ComplexGrid2D)
+    def save(self, fname: str, verbose=False):
+        tmp_name = f'{fname}.tmp.file'
+        if verbose:
+            self.yell(f'dumping profile data to {fname}.field')
+        np.savez(tmp_name, **self.export_state()) 
+        shutil.move(f'{tmp_name}.npz', f'{fname}.field')
+
+    @overrides(ComplexGrid2D)
     def yell(self, s):
         print(f'[field] {s}')
 
@@ -96,8 +104,14 @@ class RealField2D(RealGrid2D, ComplexField2D):
 
 
 def load_field(filepath, is_complex=False) -> ComplexField2D:
-    state = np.load(filepath)
-    return import_field(state, is_complex=False)
+    state = np.load(filepath, allow_pickle=True)
+    
+    state1 = dict()
+    for key in state.files:
+        state1[key] = state[key]
+    state1 = scalarize(state1)
+
+    return import_field(state1, is_complex=False)
 
 def import_field(state, is_complex=False) -> RealField2D:
     psi = state['psi']

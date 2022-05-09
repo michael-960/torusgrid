@@ -1,3 +1,11 @@
+from __future__ import annotations
+import threading
+import tqdm
+import time
+import warnings
+from typing import List, Callable
+import sys
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
@@ -6,15 +14,9 @@ import pyfftw
 from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 from michael960lib.common import deprecated, experimental
-
-import threading
-import tqdm
-import time
-import warnings
-from typing import List
-import sys
-
 from .fields import ComplexField2D, RealField2D, FieldStateFunction
+
+from .callbacks import EvolverCallBack
 
 
 class FieldEvolver:
@@ -24,7 +26,6 @@ class FieldEvolver:
         self.ended = False
         self.name = 'null'
 
-        self.callbacks = []
         self._continue_flag = True
 
     # update field
@@ -36,26 +37,21 @@ class FieldEvolver:
             self.step()
             i += 1
 
-    def run_multisteps(self, N_steps: int, N_epochs: int, 
-            callbacks: List=[], **kwargs):
+    def run_multisteps(self, N_steps: int, N_epochs: int, **kwargs):
         self.start()
-        self.callbacks = callbacks
 
         progress_bar = tqdm.tqdm(range(N_epochs), bar_format='{l_bar}{bar}|{postfix}')
         self.on_create_progress_bar(progress_bar)
         for i in progress_bar:
             self.run_steps(N_steps)
             self.on_epoch_end(progress_bar)
-
             if not self.get_continue_flag():
                 break
 
         self.end()
 
-    def run_nonstop(self, N_steps, custom_keyboard_interrupt_handler=None, 
-            callbacks: List=[], **kwargs):
+    def run_nonstop(self, N_steps, custom_keyboard_interrupt_handler=None, **kwargs):
         self.start()
-        self.callbacks = callbacks
 
         lock = threading.Lock()
         stopped = False 
@@ -102,12 +98,9 @@ class FieldEvolver:
         pass
 
     def on_epoch_end(self, progress_bar: tqdm.tqdm):
-        for cb in self.callbacks:
-            cb(self)
+        pass
 
     def on_nonstop_epoch_end(self):
-        for cb in self.callbacks:
-            cb(self)
         time.sleep(0.001)
 
     def start(self):
@@ -129,11 +122,30 @@ class FancyEvolver(FieldEvolver):
         self.history = EvolverHistory()
         self.display_format = '[DISPLAY FORMAT UNSPECIFIED]'
         self.info = dict()
+        self.callbacks = []
     
     def set_display_format(self, display_format: str):
         if display_format is not None:
             self.display_format = display_format
-        
+       
+    @overrides(FieldEvolver)
+    def run_multisteps(self, N_steps: int, N_epochs: int,
+            callbacks: List[EvolverCallBack]=[]):
+        for cb in callbacks:
+            cb.reinit()
+        self.callbacks = callbacks
+        super().run_multisteps(N_steps, N_epochs)
+
+
+    @overrides(FieldEvolver) 
+    def run_nonstop(self, N_steps, custom_keyboard_interrupt_handler=None,
+            callbacks: List[EvolverCallBack]=[]):
+        for cb in callbacks:
+            cb.reinit()
+        self.callbacks = callbacks
+        super().run_nonstop(N_steps, custom_keyboard_interrupt_handler)
+
+
     @overrides(FieldEvolver)
     def start(self):
         super().start()
@@ -148,7 +160,7 @@ class FancyEvolver(FieldEvolver):
         progress_bar.set_description_str(self.display_format.format(**self.info, **es, **(sf.get_content())))
         self.history.append_state_function(es, sf)
         for cb in self.callbacks:
-            cb(self, state)
+            cb.on_call(self, sf)
 
     @overrides(FieldEvolver)
     def on_nonstop_epoch_end(self):
@@ -157,7 +169,7 @@ class FancyEvolver(FieldEvolver):
         sys.stdout.write('\r' + self.display_format.format(**self.info, **es, **(sf.get_content())))
         self.history.append_state_function(es, sf)
         for cb in self.callbacks:
-            cb(self, sf)
+            cb.on_call(self, sf)
 
     @overrides(FieldEvolver)
     def end(self):
