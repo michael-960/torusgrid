@@ -91,7 +91,7 @@ class FieldEvolver:
     def get_continue_flag(self):
         return self._continue_flag
 
-    def set_continue_flag(self, flag):
+    def set_continue_flag(self, flag: bool):
         self._continue_flag = flag
 
     def on_create_progress_bar(self, progress_bar: tqdm.tqdm):

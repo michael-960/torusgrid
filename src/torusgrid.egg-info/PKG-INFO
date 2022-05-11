@@ -1,13 +1,11 @@
 Metadata-Version: 2.1
 Name: torusgrid
-Version: 0.2.0
+Version: 0.2.2
 Summary: periodic fields with definite dimensions equipped with FFT operations
 Home-page: https://github.com/michael-960/torusgrid
 Author: Michael Wang
 Author-email: mike.wang96029@gmail.com
-License: UNKNOWN
 Project-URL: Bug Tracker, https://github.com/michael-960/torusgrid/issues
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -27,7 +25,5 @@ Modules
 :code:`torusgrid.fields` - contains :code:`ComplexField2D` and its subclass :code:`RealField2D`, which are 2D arrays with definite sizes equipped with FFT operations
 
 :code:`torusgrid.field_util` - utility functions to manipulate :code:`ComplexField2D` or :code:`RealField2D` objects
-
-
 
 

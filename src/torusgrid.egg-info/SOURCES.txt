@@ -4,6 +4,7 @@ pyproject.toml
 setup.cfg
 setup.py
 src/torusgrid/__init__.py
+src/torusgrid/callbacks.py
 src/torusgrid/dynamics.py
 src/torusgrid/field_util.py
 src/torusgrid/fields.py

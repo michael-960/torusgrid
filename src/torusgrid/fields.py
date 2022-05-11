@@ -33,7 +33,10 @@ class ComplexField2D(ComplexGrid2D):
         self.set_dimensions(Lx, Ly, Nx, Ny)
         self.fft2 = None
         self.ifft2 = None
-        
+
+    def get_dimensions(self):
+        return self.Lx, self.Ly, self.Nx, self.Ny
+
     def set_dimensions(self, Lx, Ly, Nx, Ny):
         self.set_resolution(Nx, Ny)
         self.set_size(Lx, Ly)
