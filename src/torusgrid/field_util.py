@@ -59,7 +59,7 @@ def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place=False):
         field1 = field.copy()
         field1.set_dimensions(field.Lx, field.Ly, Nx, Ny)
         field1.set_psi(psi1)
-        return
+        return field1
 
 
 def extend(field: ComplexField2D, Mx: int, My: int, in_place=False):
