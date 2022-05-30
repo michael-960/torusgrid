@@ -15,17 +15,17 @@ from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 from michael960lib.common import deprecated, experimental
 from .fields import ComplexField2D, RealField2D, FieldStateFunction
+from .grids import StateFunction, ComplexGridND
 
 from .callbacks import EvolverCallBack
 
 
-class FieldEvolver:
-    def __init__(self, field: ComplexField2D):
-        self.field = field
+class GridEvolver:
+    def __init__(self, grid: ComplexGridND):
+        self.field = grid
         self.started = False
         self.ended = False
         self.name = 'null'
-
         self._continue_flag = True
 
     # update field
@@ -105,19 +105,19 @@ class FieldEvolver:
 
     def start(self):
         if self.ended:
-            raise MinimizerError(self, 'minimization has already ended')
+            raise EvolverError(self, 'minimization has already ended')
         self.started = True
 
     def end(self):
         if self.started:
             self.ended = True
         else:
-            raise MinimizerError(self, 'minimization has not been started')
+            raise EvolverError(self, 'minimization has not been started')
 
 
-class FancyEvolver(FieldEvolver):
-    def __init__(self, field: ComplexField2D):
-        super().__init__(field)
+class FancyEvolver(GridEvolver):
+    def __init__(self, grid: ComplexGridND):
+        super().__init__(grid)
         self.label = 'NULL'
         self.history = EvolverHistory()
         self.display_format = '[DISPLAY FORMAT UNSPECIFIED]'
@@ -128,7 +128,7 @@ class FancyEvolver(FieldEvolver):
         if display_format is not None:
             self.display_format = display_format
        
-    @overrides(FieldEvolver)
+    @overrides(GridEvolver)
     def run_multisteps(self, N_steps: int, N_epochs: int,
             callbacks: List[EvolverCallBack]=[]):
         for cb in callbacks:
@@ -137,7 +137,7 @@ class FancyEvolver(FieldEvolver):
         super().run_multisteps(N_steps, N_epochs)
 
 
-    @overrides(FieldEvolver) 
+    @overrides(GridEvolver) 
     def run_nonstop(self, N_steps, custom_keyboard_interrupt_handler=None,
             callbacks: List[EvolverCallBack]=[]):
         for cb in callbacks:
@@ -146,14 +146,14 @@ class FancyEvolver(FieldEvolver):
         super().run_nonstop(N_steps, custom_keyboard_interrupt_handler)
 
 
-    @overrides(FieldEvolver)
+    @overrides(GridEvolver)
     def start(self):
         super().start()
         sf = self.get_state_function()
         es = self.get_evolver_state()
         self.history.append_state_function(es, sf)
 
-    @overrides(FieldEvolver)
+    @overrides(GridEvolver)
     def on_epoch_end(self, progress_bar: tqdm.tqdm):
         sf = self.get_state_function()
         es = self.get_evolver_state()
@@ -162,7 +162,7 @@ class FancyEvolver(FieldEvolver):
         for cb in self.callbacks:
             cb.on_call(self, sf)
 
-    @overrides(FieldEvolver)
+    @overrides(GridEvolver)
     def on_nonstop_epoch_end(self):
         sf = self.get_state_function()
         es = self.get_evolver_state()
@@ -171,7 +171,7 @@ class FancyEvolver(FieldEvolver):
         for cb in self.callbacks:
             cb.on_call(self, sf)
 
-    @overrides(FieldEvolver)
+    @overrides(GridEvolver)
     def end(self):
         super().end()
         self.history.commit(self.label, self.field)
@@ -179,7 +179,7 @@ class FancyEvolver(FieldEvolver):
     def get_evolver_state(self) -> dict:
         raise NotImplementedError 
 
-    def get_state_function(self) -> FieldStateFunction:
+    def get_state_function(self) -> StateFunction:
         raise NotImplementedError
 
 
@@ -190,7 +190,7 @@ class EvolverHistory:
         self.committed = False 
         self.final_field_state = None
 
-    def append_state_function(self, evolver_state: dict, sf: FieldStateFunction):
+    def append_state_function(self, evolver_state: dict, sf: StateFunction):
         if self.committed:
             raise ModifyingReadOnlyObjectError(
             f'history object is already committed and hence not editable', self)
@@ -208,7 +208,7 @@ class EvolverHistory:
     def is_committed(self):
         return self.committed
 
-    def get_state_functions(self) -> List[FieldStateFunction]:
+    def get_state_functions(self) -> List[StateFunction]:
         return self.state_functions
 
     def get_final_field_state(self):
@@ -264,12 +264,17 @@ class FreeEnergyFunctional2D:
         return np.mean(self.free_energy_density(field))
 
 
-class MinimizerError(IllegalActionError):
-    def __init__(self, minimizer: FieldEvolver, msg=None):
+class EvolverError(IllegalActionError):
+    def __init__(self, evolver: GridEvolver, msg=None):
         if minimizer is None:
-            self.message = 'no minimizer provided'
+            self.message = 'no evolver provided'
         else:
             self.message = msg
         super().__init__(self.message)
-        self.minimier = minimizer
+        self.evolver = evolver
+        # deprecated
+        self.minimizer = self.evolver
 
+
+# deprecated
+MinimizerError = EvolverError

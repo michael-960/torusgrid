@@ -2,7 +2,7 @@ import threading
 import tqdm
 import time
 import warnings
-from typing import List
+from typing import List, Tuple, overload
 import shutil
 
 import numpy as np
@@ -13,43 +13,152 @@ import pyfftw
 from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 from michael960lib.common import deprecated, experimental, scalarize
-from .grids import ComplexGrid2D, RealGrid2D
+from .grids import ComplexGrid2D, RealGrid2D, ComplexGridND, RealGridND
 
 
 
-@deprecated('will be removed')
-def real_convolution_2d(psi_k, kernel, NN):
-    r = kernel * (np.abs(psi_k**2))
-    r[:,0] /= 2
-    r[:,-1] /= 2
-    return np.sum(r) / (NN/2)
+class ComplexFieldND(ComplexGridND):
+    def __init__(self, size: Tuple[float], shape: Tuple[int]):
+        super().__init__(shape)
+        self.set_size(size)
+
+    def set_dimensions(self, size: Tuple[float], shape: Tuple[int]):
+        self.set_resolution(shape)
+        self.set_size(size)
+
+    def set_size(self, size: Tuple[int]):
+        print('complex')
+        if len(size) != self.rank:
+            raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
+        self.size = size
+        self.Volume = np.prod(size)
+        
+        R, K, DR, DK = [], [], [], []
+
+        for i in range(self.rank):
+            x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i]) 
+            R.append(x)
+            K.append(k)
+            DR.append(dx)
+            DK.append(dk)
+
+        self.R = np.meshgrid(*R, indexing='ij')
+        self.K = np.meshgrid(*K, indexing='ij')
+        self.dR = np.array(DR)
+        self.dk = np.array(DK)
+
+        self.dV = np.prod(self.dR)
+
+    @overrides(ComplexGridND)
+    def export_state(self) -> dict():
+        state = {'psi': self.psi.copy(), 'size': self.size}
+        return state
+
+    @overrides(ComplexGridND)
+    def copy(self):
+        field1 = self.__class__(self.size, self.shape)
+        field1.set_psi(self.psi)
+        return field1
+
+    @overrides(ComplexGrid2D)
+    def save(self, fname: str, verbose=False):
+        tmp_name = f'{fname}.tmp.file'
+        if verbose:
+            self.yell(f'dumping field data to {fname}.field')
+        np.savez(tmp_name, **self.export_state()) 
+        shutil.move(f'{tmp_name}.npz', f'{fname}.field')
 
 
-# A Field2D is a complex 2D field with definite dimensions, it also includes:
-# psi, psi_k(fourier transform), forward plan, backward plan
-class ComplexField2D(ComplexGrid2D):
-    def __init__(self, Lx, Ly, Nx, Ny):
-        super().__init__(Nx, Ny)
-        self.set_dimensions(Lx, Ly, Nx, Ny)
-        self.fft2 = None
-        self.ifft2 = None
+class RealFieldND(ComplexFieldND, RealGridND):
+    def __init__(self, size: Tuple[float], shape: Tuple[int]):
+        super().__init__(size, shape)
+        self._isreal = True
+
+    @overrides(ComplexFieldND)
+    def set_size(self, size: Tuple[int]):
+        print('real')
+        if len(size) != self.rank:
+            raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
+        self.size = size
+        self.Volume = np.prod(size)
+        
+        R, K, DR, DK = [], [], [], []
+
+        for i in range(self.rank):
+            if i == self.rank - 1:
+                x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i], real=True)
+            else:
+                x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i]) 
+
+            R.append(x)
+            K.append(k)
+            DR.append(dx)
+            DK.append(dk)
+
+        self.R = np.meshgrid(*R, indexing='ij')
+        self.K = np.meshgrid(*K, indexing='ij')
+        self.dR = np.array(DR)
+        self.dk = np.array(DK)
+
+
+class ComplexField2D(ComplexFieldND):
+    def __init__(self, Lx: float, Ly: float, Nx: int, Ny: int):
+        super().__init__((Lx, Ly), (Nx, Ny))
+        self.set_dimensions((Lx, Ly), (Nx, Ny))
 
     def get_dimensions(self):
         return self.Lx, self.Ly, self.Nx, self.Ny
 
-    def set_dimensions(self, Lx, Ly, Nx, Ny):
-        self.set_resolution(Nx, Ny)
-        self.set_size(Lx, Ly)
 
-    def set_size(self, Lx, Ly):
-        self.Lx = Lx
-        self.Ly = Ly
-        self.Volume = Lx*Ly
+    @overload
+    def set_dimensions(self, size, shape): ...
+    @overload
+    def set_dimensions(self, Lx, Ly, Nx, Ny): ...
+    @overrides(ComplexFieldND)
+    def set_dimensions(self, *args):
+        if len(args) == 2:
+            if type(args[0]) is tuple and type(args[1]) is tuple:
+                if len(args[0]) == len(args[1]) == 2:
+                    super().set_dimensions(args[0], args[1])
+                else:
+                    raise ValueError(f'incompatible size/shape for 2D: {args[0]}/{args[1]}')
+            else:
+                raise ValueError(f'invalid size/shape')
+        elif len(args) == 4:
+            super().set_dimensions((args[0], args[1]), (args[2], args[3]))
+        else:
+            raise ValueError
+        
+        self.Lx = self.size[0]
+        self.Ly = self.size[1]
+        self.Nx = self.shape[0]
+        self.Ny = self.shape[1]
+            
 
-        x, kx, self.dx, self.dkx, y, ky, self.dy, self.dky = fourier.generate_xk_2d(Lx, Ly, self.Nx, self.Ny, real=self._isreal)
-        self.dV = self.dx * self.dy
-        self.X, self.Y = np.meshgrid(x, y, indexing='ij')
-        self.Kx, self.Ky = np.meshgrid(kx, ky, indexing='ij')
+    @overload
+    def set_size(self, Lx: float, Ly: float): ...
+    @overload
+    def set_size(self, size: Tuple[int]): ...
+    @overrides(ComplexFieldND)
+    def set_size(self, arg1, arg2=None):
+        if type(arg1) is tuple and arg2 is None:
+            if len(arg1) == 2:
+                super().set_size(arg1)
+            else:
+                raise ValueError(f'incompatible shape for 2D size: {arg1}')
+        else:
+            super().set_size((Lx, Ly))
+
+        self.setup_convenience_variables()
+
+
+    def setup_convenience_variables(self):
+        self.X = self.R[0]
+        self.Y = self.R[1]
+
+        #self.Kx, self.Ky = np.meshgrid(kx, ky, indexing='ij')
+        self.Kx = self.K[0]
+        self.Ky = self.K[1]
 
         self.Kx2 = self.Kx**2
         self.Ky2 = self.Ky**2
@@ -61,18 +170,19 @@ class ComplexField2D(ComplexGrid2D):
         self.K4 = self.K2**2
         self.K6 = self.K2 * self.K4
 
-    @overrides(ComplexGrid2D)
+    @overrides(ComplexFieldND)
     def export_state(self):
-        state = {'psi': self.psi.copy(), 'Lx': self.Lx, 'Ly': self.Ly}
+        state = super().export_state()
+        state['Lx'] = self.Lx
+        state['Ly'] = self.Ly
         return state
     
-    @overrides(ComplexGrid2D)
+    @overrides(ComplexFieldND)
     def copy(self):
         field1 = self.__class__(self.Lx, self.Ly, self.Nx, self.Ny)
         field1.set_psi(self.psi)
         return field1
 
-    @overrides(ComplexGrid2D)
     def plot(self, lazy_factor=1, cmap='jet', vmin=-1, vmax=1):
         plt.figure(dpi=200)
         LF = lazy_factor
@@ -85,25 +195,44 @@ class ComplexField2D(ComplexGrid2D):
         plt.margins(x=0, y=0, tight=True)
         plt.show()
 
-    @overrides(ComplexGrid2D)
-    def save(self, fname: str, verbose=False):
-        tmp_name = f'{fname}.tmp.file'
-        if verbose:
-            self.yell(f'dumping profile data to {fname}.field')
-        np.savez(tmp_name, **self.export_state()) 
-        shutil.move(f'{tmp_name}.npz', f'{fname}.field')
 
-    @overrides(ComplexGrid2D)
-    def yell(self, s):
-        print(f'[field] {s}')
+class RealField2D(RealFieldND, ComplexField2D):
+    def __init__(self, Lx: float, Ly: float, Nx: int, Ny: int):
+        ComplexGridND.__init__(self, (Nx, Ny))
+        self.set_dimensions((Lx, Ly), (Nx, Ny))
+        self._isreal = True
 
+    @overload
+    def set_dimensions(self, size: Tuple[int], shape: Tuple[int]): ...
+    @overload
+    def set_dimensions(self, Lx: float, Ly: float, Nx: int, Ny: int): ...
+    @overrides(RealFieldND)
+    def set_dimensions(self, *args):
+        ComplexField2D.set_dimensions(self, *args)
 
-class RealField2D(RealGrid2D, ComplexField2D):
-    def __init__(self, Lx, Ly, Nx, Ny):
-        RealGrid2D.__init__(self, Nx, Ny)
-        self.set_dimensions(Lx, Ly, Nx, Ny)
-        self.fft2 = None
-        self.ifft2 = None
+    @overload
+    def set_size(self, Lx: float, Ly: float): ...
+    @overload
+    def set_size(self, size: Tuple[int]): ...
+    @overrides(RealFieldND)
+    def set_size(self, arg1, arg2=None):
+        if type(arg1) is tuple and arg2 is None:
+            if len(arg1) == 2:
+                RealFieldND.set_size(self, arg1)
+            else:
+                raise ValueError(f'incompatible shape for 2D size: {arg1}')
+        else:
+            RealFieldND.set_size(self, (arg1, arg2))
+
+        self.setup_convenience_variables()
+
+    @overrides(RealFieldND)
+    def export_state(self) -> dict:
+        return ComplexField2D.export_state(self)
+
+    @overrides(RealFieldND)
+    def copy(self):
+        return ComplexField2D.copy(self)
 
 
 def load_field(filepath, is_complex=False) -> ComplexField2D:
@@ -116,6 +245,8 @@ def load_field(filepath, is_complex=False) -> ComplexField2D:
 
     return import_field(state1, is_complex=False)
 
+
+
 def import_field(state, is_complex=False) -> RealField2D:
     psi = state['psi']
     Lx = state['Lx']
@@ -124,11 +255,11 @@ def import_field(state, is_complex=False) -> RealField2D:
     Ny = psi.shape[1]
     if is_complex: 
         field = ComplexField2D(Lx, Ly, Nx, Ny)
-        field.set_psi(psi, verbose=False)
+        field.set_psi(psi)
         return field
     else:
         field = RealField2D(Lx, Ly, Nx, Ny)
-        field.set_psi(psi, verbose=False)
+        field.set_psi(psi)
         return field
 
 

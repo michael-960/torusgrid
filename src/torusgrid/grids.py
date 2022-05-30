@@ -3,6 +3,7 @@ import tqdm
 import time
 import warnings
 import shutil
+from typing import Tuple, Union, overload
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -14,36 +15,32 @@ from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnl
 
 
 
-class ComplexGrid2D:
-    def __init__(self, Nx, Ny):
-        self.set_resolution(Nx, Ny)
-        self.fft2 = None
-        self.ifft2 = None
+class ComplexGridND:
+    def __init__(self, shape: Tuple[int]):
+        self.fft = None
+        self.ifft = None
         self._isreal = False
-        
-    def set_resolution(self, Nx, Ny, verbose=False):
-        self.Nx = Nx
-        self.Ny = Ny
-        self.psi = pyfftw.zeros_aligned((Nx, Ny), dtype='complex128')
-        self.psi_k = pyfftw.zeros_aligned((Nx, Ny), dtype='complex128')
+        self.set_resolution(shape)
+
+    def set_resolution(self, shape: Tuple[int]):
+        self.shape = shape
+        self.rank = len(shape)
+        self.psi = pyfftw.zeros_aligned(shape, dtype='complex128')
+        self.psi_k = pyfftw.zeros_aligned(shape, dtype='complex128')
 
     def initialize_fft(self, **fftwargs):
         psi_tmp = self.psi.copy()
-        self.fft2 = pyfftw.FFTW(self.psi, self.psi_k, direction='FFTW_FORWARD', axes=(0,1), **fftwargs)
-        self.ifft2 = pyfftw.FFTW(self.psi_k, self.psi, direction='FFTW_BACKWARD', axes=(0,1), **fftwargs)
+        all_axis = tuple(np.arange(self.rank))
+        self.fft = pyfftw.FFTW(self.psi, self.psi_k, direction='FFTW_FORWARD', axes=all_axis, **fftwargs)
+        self.ifft = pyfftw.FFTW(self.psi_k, self.psi, direction='FFTW_BACKWARD', axes=all_axis, **fftwargs)
         self.set_psi(psi_tmp)
-
+    
     def fft_initialized(self):
-        return not(self.fft2 is None or self.ifft2 is None)
+        return not(self.fft is None or self.ifft is None)
 
-    def set_psi(self, psi1, verbose=False):
-        if not np.isscalar(psi1):
-            if (psi1.shape[0] != self.Nx or psi1.shape[1] != self.Ny): 
-                raise ValueError(f'array has incompatible shape {psi1.shape} with ({self.Nx, self.Ny})')
-
-        self.psi[:,:] = psi1
-        if verbose:
-            self.yell('new psi set')
+    def export_state(self):
+        state = {'psi': self.psi.copy()}
+        return state
 
     def save(self, fname: str, verbose=False):
         tmp_name = f'{fname}.tmp.file'
@@ -52,14 +49,105 @@ class ComplexGrid2D:
         np.savez(tmp_name, **self.export_state()) 
         shutil.move(f'{tmp_name}.npz', f'{fname}.grid')
 
-    def export_state(self):
-        state = {'psi': self.psi.copy()}
-        return state
-    
     def copy(self):
-        field1 = self.__class__(self.Nx, self.Ny)
+        field1 = ComplexGridND(self.shape)
         field1.set_psi(self.psi)
         return field1
+
+    def set_psi(self, psi1: Union[float, np.ndarray]):
+        if not np.isscalar(psi1):
+            if psi1.shape != self.shape:
+                raise ValueError(f'array has incompatible shape {psi1.shape} with {self.shape}')
+        self.psi[...] = psi1
+
+    def yell(self, s):
+        print(f'[grid] {s}')
+
+
+class RealGridND(ComplexGridND):
+    def __init__(self, shape: Tuple[int]):
+        super().__init__(shape)
+        self._isreal = True
+
+    def set_resolution(self, shape):
+        if shape[-1] % 2:
+            warnings.warn('odd resolution on the last axis will be automatically made even for RFFT')
+            shape_list = list(shape)
+            shape_list[-1] += 1
+            shape = tuple(shape_list)
+
+        self.shape = shape
+        self.rank = len(self.shape)
+
+        shape_k = list(shape)
+        shape_k[-1] = shape_k[-1]//2 + 1
+        shape_k = tuple(shape_k)
+
+        self.psi = pyfftw.zeros_aligned(shape, dtype='float64')
+        self.psi_k = pyfftw.zeros_aligned(shape_k, dtype='complex128')
+    
+    @overrides(ComplexGridND)
+    def set_psi(self, psi1: Union[float, np.ndarray]):
+        if not np.isscalar(psi1):
+            if psi1.shape != self.shape:
+                raise ValueError(f'array has incompatible shape {psi1.shape} with {self.shape}')
+        
+        if not np.all(np.isreal(psi1)):
+            raise ValueError(f'array is complex') 
+        self.psi[...] = psi1
+
+
+class ComplexGrid1D(ComplexGridND):
+    def __init__(self, N):
+        super().__init__((N,))
+        self.N = N
+
+    @overload
+    def set_resolution(self, N: int): ...
+    @overload
+    def set_resolution(self, shape: Tuple[int]): ...
+    @overrides(ComplexGridND)
+    def set_resolution(self, X):
+        if type(X) is tuple:
+            super().set_resolution(X)
+        else:
+            super().set_resolution((X,))
+
+
+class RealGrid1D(RealGridND, ComplexGrid1D):
+    def __init__(self, N):
+        ComplexGridND.__init__(self, (N,))
+        self.N = N
+        self._isreal = True
+
+    @overload
+    def set_resolution(self, N: int): ...
+    @overload
+    def set_resolution(self, shape: Tuple[int]): ...
+    @overrides(RealGridND)
+    def set_resolution(self, X):
+        if type(X) is tuple:
+            super().set_resolution(X)
+        else:
+            super().set_resolution((X,))
+
+
+class ComplexGrid2D(ComplexGridND):
+    def __init__(self, Nx, Ny):
+        super().__init__((Nx, Ny))
+        self.Nx = Nx
+        self.Ny = Ny
+
+    @overload
+    def set_resolution(self, Nx: int, Ny: int): ...
+    @overload
+    def set_resolution(self, shape: Tuple[int]): ...
+    @overrides(ComplexGridND)
+    def set_resolution(self, X, Y=None):
+        if type(X) is tuple:
+            super().set_resolution(X)
+        else:
+            super().set_resolution((X, Y))
 
     def plot(self, lazy_factor=1, cmap='jet', vmin=-1, vmax=1):
         plt.figure(dpi=200)
@@ -73,51 +161,55 @@ class ComplexGrid2D:
         plt.margins(x=0, y=0, tight=True)
         plt.show()
 
-    def yell(self, s):
-        print(f'[grid] {s}')
-
-
-class RealGrid2D(ComplexGrid2D):
+    
+class RealGrid2D(RealGridND, ComplexGrid2D):
     def __init__(self, Nx, Ny):
-        ComplexGrid2D.__init__(self, Nx, Ny)
-        self._isreal = True
-        
-    def set_resolution(self, Nx, Ny):
-        if Ny % 2:
-            warnings.warn('odd Ny will be automatically made even for RFFT')
-            Ny += 1
+        ComplexGridND.__init__(self, (Nx, Ny))
         self.Nx = Nx
         self.Ny = Ny
-        self.psi = pyfftw.zeros_aligned((Nx, Ny), dtype='float64')
-        self.psi_k = pyfftw.zeros_aligned((Nx, Ny//2+1), dtype='complex128')
-
-    def set_psi(self, psi1, verbose=False):
-        if not np.isscalar(psi1):
-            if (psi1.shape[0] != self.Nx or psi1.shape[1] != self.Ny): 
-                raise ValueError(f'array has incompatible shape {psi1.shape} with ({self.Nx, self.Ny})')
+        self._isreal = True
         
-        if not np.all(np.isreal(psi1)):
-            raise ValueError(f'array is complex') 
-
-        self.psi[:,:] = psi1
-        if verbose:
-            self.yell('new psi set')
+    @overload
+    def set_resolution(self, Nx: int, Ny: int): ...
+    @overload
+    def set_resolution(self, shape: Tuple[int]): ...
+    @overrides(RealGridND)
+    def set_resolution(self, X, Y=None):
+        if type(X) is tuple:
+            super().set_resolution(X)
+        else:
+            super().set_resolution((X, Y))
 
 
 def load_grid(filepath, is_complex=False):
     state = np.load(filepath)
     return import_grid(state, is_complex=False)
 
+
 def import_grid(state, is_complex=False):
     psi = state['psi']
-    Nx = psi.shape[0]
-    Ny = psi.shape[1]
+    shape = psi.shape
     if is_complex: 
-        grid = ComplexGrid2D(Nx, Ny)
-        grid.set_psi(psi, verbose=False)
+        grid = ComplexGridND(shape)
+        grid.set_psi(psi)
         return grid 
     else:
-        grid = RealGrid2D(Nx, Ny)
-        grid.set_psi(psi, verbose=False)
+        grid = RealGrid2D(shape)
+        grid.set_psi(psi)
         return grid
+
+
+class StateFunction:
+    def __init__(self):
+        self._content = dict()
+
+    def get_content(self) -> dict():
+        return self._content.copy()
+
+    def get_item(self, name: str):
+        return self._content[name]
+
+    def export(self) -> dict:
+        return self._content
+
 
