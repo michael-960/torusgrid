@@ -27,7 +27,6 @@ class ComplexFieldND(ComplexGridND):
         self.set_size(size)
 
     def set_size(self, size: Tuple[int]):
-        print('complex')
         if len(size) != self.rank:
             raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
         self.size = size
@@ -45,7 +44,7 @@ class ComplexFieldND(ComplexGridND):
         self.R = np.meshgrid(*R, indexing='ij')
         self.K = np.meshgrid(*K, indexing='ij')
         self.dR = np.array(DR)
-        self.dk = np.array(DK)
+        self.dK = np.array(DK)
 
         self.dV = np.prod(self.dR)
 
@@ -76,7 +75,6 @@ class RealFieldND(ComplexFieldND, RealGridND):
 
     @overrides(ComplexFieldND)
     def set_size(self, size: Tuple[int]):
-        print('real')
         if len(size) != self.rank:
             raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
         self.size = size
@@ -98,7 +96,9 @@ class RealFieldND(ComplexFieldND, RealGridND):
         self.R = np.meshgrid(*R, indexing='ij')
         self.K = np.meshgrid(*K, indexing='ij')
         self.dR = np.array(DR)
-        self.dk = np.array(DK)
+        self.dK = np.array(DK)
+
+        self.dV = np.prod(self.dR)
 
 
 class ComplexField2D(ComplexFieldND):
@@ -128,12 +128,7 @@ class ComplexField2D(ComplexFieldND):
             super().set_dimensions((args[0], args[1]), (args[2], args[3]))
         else:
             raise ValueError
-        
-        self.Lx = self.size[0]
-        self.Ly = self.size[1]
-        self.Nx = self.shape[0]
-        self.Ny = self.shape[1]
-            
+           
 
     @overload
     def set_size(self, Lx: float, Ly: float): ...
@@ -151,8 +146,19 @@ class ComplexField2D(ComplexFieldND):
 
         self.setup_convenience_variables()
 
-
     def setup_convenience_variables(self):
+
+        self.Lx = self.size[0]
+        self.Ly = self.size[1]
+        self.Nx = self.shape[0]
+        self.Ny = self.shape[1]
+
+        self.dx = self.dR[0]
+        self.dy = self.dR[1]
+
+        self.dkx = self.dK[0]
+        self.dky = self.dK[1]
+ 
         self.X = self.R[0]
         self.Y = self.R[1]
 
@@ -183,7 +189,7 @@ class ComplexField2D(ComplexFieldND):
         field1.set_psi(self.psi)
         return field1
 
-    def plot(self, lazy_factor=1, cmap='jet', vmin=-1, vmax=1):
+    def plot(self, lazy_factor=1, cmap='jet', vmin=-1, vmax=1, show=True):
         plt.figure(dpi=200)
         LF = lazy_factor
         ax = plt.gca()
@@ -193,7 +199,10 @@ class ComplexField2D(ComplexFieldND):
         plt.colorbar(cm1, ax=ax, orientation='horizontal', location='top', shrink=0.2)
 
         plt.margins(x=0, y=0, tight=True)
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            return ax
 
 
 class RealField2D(RealFieldND, ComplexField2D):
