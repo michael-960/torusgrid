@@ -213,7 +213,7 @@ class EvolverHistory:
 
     def get_final_field_state(self):
         if not self.committed:
-            raise IllegalActionError('cannot get final state from uncommitted PFC minimizer history')
+            raise IllegalActionError('cannot get final state from uncommitted evolver history')
         return self.final_field_state
 
     def get_label(self):
@@ -266,7 +266,7 @@ class FreeEnergyFunctional2D:
 
 class EvolverError(IllegalActionError):
     def __init__(self, evolver: GridEvolver, msg=None):
-        if minimizer is None:
+        if evolver is None:
             self.message = 'no evolver provided'
         else:
             self.message = msg

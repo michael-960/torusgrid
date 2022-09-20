@@ -1,4 +1,6 @@
-from typing import List
+from __future__ import annotations
+from typing import List, Literal, Tuple, Union, overload
+from matplotlib.fontconfig_pattern import Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -7,9 +9,14 @@ from .fields import ComplexField2D, RealField2D, FieldOperationError
 
 
 
-def plot(fields: List[ComplexField2D], cmap='jet', show=True, vlim=(-1, 1), colorbar=True, ncols=4, fig_dims=(4, 4)):
+def plot(fields: ComplexField2D|List[ComplexField2D],
+        cmap: str='jet', show: bool=True, vlim: Tuple[float, float]=(-1., 1.), 
+        colorbar: bool=True, ncols=4, fig_dims=(4, 4)):
     if not type(fields) in [tuple, list]:
+        assert isinstance(fields, ComplexField2D)
         fields = [fields]
+
+    assert isinstance(fields, list)
     nrows = (len(fields)-1) // ncols + 1
 
     if len(fields) < ncols:
@@ -33,8 +40,18 @@ def plot(fields: List[ComplexField2D], cmap='jet', show=True, vlim=(-1, 1), colo
     else:
        return fig, axs
 
+@overload
+def set_size(field: RealField2D, Lx: float, Ly: float) -> RealField2D: ...
+@overload
+def set_size(field: ComplexField2D, Lx: float, Ly: float) -> ComplexField2D: ...
+@overload
+def set_size(field: ComplexField2D, Lx: float, Ly: float, in_place: Literal[True]) -> None: ...
+@overload
+def set_size(field: RealField2D, Lx: float, Ly: float, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def set_size(field: ComplexField2D, Lx: float, Ly: float, in_place: Literal[False]) -> ComplexField2D: ...
 
-def set_size(field: ComplexField2D, Lx: float, Ly: float, in_place=False):
+def set_size(field: ComplexField2D, Lx: float, Ly: float, in_place: bool=False) -> Union[None, ComplexField2D, RealField2D]:
     if in_place:
         field.set_size(Lx, Ly)
         return
@@ -44,7 +61,18 @@ def set_size(field: ComplexField2D, Lx: float, Ly: float, in_place=False):
         return field1
 
 
-def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place=False):
+@overload
+def change_resolution(field: RealField2D, Nx: int, Ny: int) -> RealField2D: ...
+@overload
+def change_resolution(field: ComplexField2D, Nx: int, Ny: int) -> ComplexField2D: ...
+@overload
+def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place: Literal[True]) -> None: ...
+@overload
+def change_resolution(field: RealField2D, Nx: int, Ny: int, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place: Literal[False]) -> ComplexField2D: ...
+
+def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place: bool=False) -> Union[None, ComplexField2D, RealField2D]:
     psi1 = np.zeros((Nx, Ny))
 
     for i in range(Nx):
@@ -62,7 +90,18 @@ def change_resolution(field: ComplexField2D, Nx: int, Ny: int, in_place=False):
         return field1
 
 
-def extend(field: ComplexField2D, Mx: int, My: int, in_place=False):
+@overload
+def extend(field: RealField2D, Mx: int, My: int) -> RealField2D: ...
+@overload
+def extend(field: ComplexField2D, Mx: int, My: int) -> ComplexField2D: ...
+@overload
+def extend(field: ComplexField2D, Mx: int, My: int, in_place: Literal[True]) -> None: ...
+@overload
+def extend(field: RealField2D, Mx: int, My: int, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def extend(field: ComplexField2D, Mx: int, My: int, in_place: Literal[False]) -> ComplexField2D: ...
+
+def extend(field: ComplexField2D, Mx: int, My: int, in_place: bool=False) -> None | ComplexField2D | RealField2D:
     Nx1 = field.Nx * Mx
     Ny1 = field.Ny * My
 
@@ -83,7 +122,18 @@ def extend(field: ComplexField2D, Mx: int, My: int, in_place=False):
         return field1
 
 
-def flip(field: ComplexField2D, axis: str, in_place=False):
+@overload
+def flip(field: RealField2D, axis: str) -> RealField2D: ...
+@overload
+def flip(field: ComplexField2D, axis: str) -> ComplexField2D: ...
+@overload
+def flip(field: ComplexField2D, axis: str, in_place: Literal[True]) -> None: ...
+@overload
+def flip(field: RealField2D, axis: str, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def flip(field: ComplexField2D, axis: str, in_place: Literal[False]) -> ComplexField2D: ...
+
+def flip(field: ComplexField2D, axis: str, in_place: bool=False) -> None | RealField2D | ComplexField2D:
     if axis not in ['X', 'Y']:
         raise ValueError(f'\'{axis}\' is not a valid axis for flipping') 
 
@@ -101,8 +151,18 @@ def flip(field: ComplexField2D, axis: str, in_place=False):
         field1.set_psi(psi1)
         return field1
 
+@overload
+def transpose(field: RealField2D) -> RealField2D: ...
+@overload
+def transpose(field: ComplexField2D) -> ComplexField2D: ...
+@overload
+def transpose(field: ComplexField2D, in_place: Literal[True]) -> None: ...
+@overload
+def transpose(field: RealField2D, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def transpose(field: ComplexField2D, in_place: Literal[False]) -> ComplexField2D: ...
 
-def transpose(field: ComplexField2D, in_place=False):
+def transpose(field: ComplexField2D, in_place=False) -> None | RealField2D | ComplexField2D:
     psi1 = np.transpose(field.psi)
     if in_place:
         field.set_dimensions(field.Ly, field.Lx, field.Ny, field.Nx)
@@ -114,8 +174,18 @@ def transpose(field: ComplexField2D, in_place=False):
         field1.set_psi(psi1)
         return field1
 
+@overload
+def rotate(field: RealField2D, angle: str) -> RealField2D: ...
+@overload
+def rotate(field: ComplexField2D, angle: str) -> ComplexField2D: ...
+@overload
+def rotate(field: ComplexField2D, angle: str, in_place: Literal[True]) -> None: ...
+@overload
+def rotate(field: RealField2D, angle: str, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def rotate(field: ComplexField2D, angle: str, in_place: Literal[False]) -> ComplexField2D: ...
 
-def rotate(field: ComplexField2D, angle: str, in_place=False):
+def rotate(field: ComplexField2D, angle: str, in_place=False) -> None | RealField2D | ComplexField2D:
     if not angle in ['90', '180', '270']:
         raise ValueError(f'\'{angle}\' is not a valid angle for rotation')
 
@@ -139,6 +209,16 @@ def rotate(field: ComplexField2D, angle: str, in_place=False):
         field1.set_psi(psi1)
         return field1
 
+@overload
+def crop(field: RealField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float) -> RealField2D: ...
+@overload
+def crop(field: ComplexField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float) -> ComplexField2D: ...
+@overload
+def crop(field: ComplexField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float, in_place: Literal[True]) -> None: ...
+@overload
+def crop(field: RealField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float, in_place: Literal[False]) -> RealField2D: ...
+@overload
+def crop(field: ComplexField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float, in_place: Literal[False]) -> ComplexField2D: ...
 
 def crop(field: ComplexField2D, ratio_x1: float, ratio_x2: float, ratio_y1: float, ratio_y2: float, in_place=False):
     Nx2 = int(field.Nx * (ratio_x2 - ratio_x1))
@@ -208,6 +288,8 @@ def concat(field_a: ComplexField2D, field_b: ComplexField2D, direction='horizont
 
 def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='center', in_place=False, position_format='ratio',
         periodic_boundary=False):
+    '''TODO
+    '''
     valid = False
     if position in ['left', 'right', 'top', 'bottom', 'center']:
         valid = True
@@ -258,7 +340,7 @@ def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='c
 
     psi1 = field_large.psi.copy()
 
-    psi1[box_X:(box_x+box_Nx)%field_large.Nx,box_Y:(box_Y+box_Ny)%field_large.Ny] = psi_small_modified[:,:]
+    psi1[box_X:(box_X+box_Nx)%field_large.Nx,box_Y:(box_Y+box_Ny)%field_large.Ny] = psi_small_modified[:,:]
 
     if in_place:
         field_large.set_psi(psi1)
@@ -270,8 +352,25 @@ def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='c
         field1.set_psi(psi1)
         return field1
 
+@overload 
+def interface(field_a: RealField2D, field_b: RealField2D, width:
+        float, left=0.25, right=0.75) -> RealField2D: ...
+@overload
+def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
+        left=0.25, right=0.75) -> ComplexField2D: ...
+@overload
+def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
+        left: float=0.25, right: float=0.75, in_place: Literal[True]=True) -> None:
+    ...
+@overload
+def interface(field_a: RealField2D, field_b: RealField2D, width: float,
+        left: float=0.25, right: float=0.75, in_place: Literal[False]=False) -> RealField2D: ...
+@overload
+def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
+        left: float=0.25, right: float=0.75, in_place: Literal[False]=False) -> ComplexField2D: ...
 
-def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float, left=0.25, right=0.75, in_place=False):
+def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
+        left: float=0.25, right: float=0.75, in_place: bool=False) -> None | ComplexField2D | RealField2D:
     try:
         assert np.isclose(field_a.Lx, field_b.Lx, rtol=1e-6, atol=1e-6)
         assert np.isclose(field_a.Ly, field_b.Ly, rtol=1e-6, atol=1e-6)
@@ -279,13 +378,13 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float, le
         assert field_a.Ny == field_b.Ny
 
     except AssertionError as e:
-        raise CommandExecutionError(f'two fields with different dimensions can not be combined using interface()')
+        raise ValueError(f'two fields with different dimensions can not be combined using interface()')
 
 
     X, Y = field_a.X, field_a.Y
 
-    xa = field_a.Lx * 0.25
-    xb = field_a.Lx * 0.75
+    xa = field_a.Lx * left
+    xb = field_a.Lx * right
 
     bump = (1+np.tanh((X-xa)/width))/2 * (1+np.tanh((-X+xb)/width))/2
 
@@ -301,7 +400,6 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float, le
         return field1
 
 
-# set to constant
 def liquefy(field: ComplexField2D, psi0=None, in_place=False):
     if psi0 is None:
         psi0 = np.mean(field.psi)

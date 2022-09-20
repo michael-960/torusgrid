@@ -1,8 +1,9 @@
+from __future__ import annotations
 import threading
 import tqdm
 import time
 import warnings
-from typing import List, Tuple, overload
+from typing import List, Literal, Tuple, overload
 import shutil
 
 import numpy as np
@@ -16,7 +17,6 @@ from michael960lib.common import deprecated, experimental, scalarize
 from .grids import ComplexGrid2D, RealGrid2D, ComplexGridND, RealGridND
 
 
-
 class ComplexFieldND(ComplexGridND):
     def __init__(self, size: Tuple[float], shape: Tuple[int]):
         super().__init__(shape)
@@ -26,7 +26,7 @@ class ComplexFieldND(ComplexGridND):
         self.set_resolution(shape)
         self.set_size(size)
 
-    def set_size(self, size: Tuple[int]):
+    def set_size(self, size: Tuple[float]):
         if len(size) != self.rank:
             raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
         self.size = size
@@ -74,7 +74,7 @@ class RealFieldND(ComplexFieldND, RealGridND):
         self._isreal = True
 
     @overrides(ComplexFieldND)
-    def set_size(self, size: Tuple[int]):
+    def set_size(self, size: Tuple[float]):
         if len(size) != self.rank:
             raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
         self.size = size
@@ -244,7 +244,19 @@ class RealField2D(RealFieldND, ComplexField2D):
         return ComplexField2D.copy(self)
 
 
-def load_field(filepath, is_complex=False) -> ComplexField2D:
+@overload
+def load_field(filepath: str) -> RealField2D: ...
+
+@overload
+def load_field(filepath: str, is_complex: Literal[False]) -> ComplexField2D: ...
+
+@overload
+def load_field(filepath: str, is_complex: Literal[True]) -> RealField2D: ...
+
+@overload
+def load_field(filepath: str, is_complex: bool) -> RealField2D | ComplexField2D: ...
+
+def load_field(filepath: str, is_complex: bool=False) -> RealField2D | ComplexField2D:
     state = np.load(filepath, allow_pickle=True)
     
     state1 = dict()
@@ -252,11 +264,22 @@ def load_field(filepath, is_complex=False) -> ComplexField2D:
         state1[key] = state[key]
     state1 = scalarize(state1)
 
-    return import_field(state1, is_complex=False)
+    return import_field(state1, is_complex=is_complex)
 
 
+@overload
+def import_field(state: dict) -> RealField2D: ...
 
-def import_field(state, is_complex=False) -> RealField2D:
+@overload
+def import_field(state: dict, is_complex: Literal[False]) -> RealField2D: ...
+
+@overload
+def import_field(state: dict, is_complex: Literal[True]) -> ComplexField2D: ...
+
+@overload
+def import_field(state: dict, is_complex: bool) -> ComplexField2D | RealField2D: ...
+
+def import_field(state: dict, is_complex: bool=False) -> ComplexField2D | RealField2D:
     psi = state['psi']
     Lx = state['Lx']
     Ly = state['Ly']
