@@ -15,6 +15,7 @@ import pyfftw
 from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 from michael960lib.common import deprecated, experimental
+
 from .fields import ComplexField2D, RealField2D, FieldStateFunction
 
 
