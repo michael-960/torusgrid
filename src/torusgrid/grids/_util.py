@@ -22,17 +22,5 @@ def import_grid(state, is_complex=False):
 
 
 
-class StateFunction:
-    def __init__(self):
-        self._content = dict()
-
-    def get_content(self) -> dict:
-        return self._content.copy()
-
-    def get_item(self, name: str):
-        return self._content[name]
-
-    def export(self) -> dict:
-        return self._content
 
 

@@ -59,20 +59,6 @@ def import_field(state: dict, is_complex: bool=False) -> ComplexField2D | RealFi
         return field
 
 
-class FieldStateFunction:
-    def __init__(self):
-        self._content = dict()
-
-    def get_content(self) -> dict():
-        return self._content.copy()
-
-    def get_item(self, name: str):
-        return self._content[name]
-
-    def export(self) -> dict:
-        return self._content
-
-
 class FieldOperationError(Exception):
     def __init__(self, message):
         super().__init__(message)

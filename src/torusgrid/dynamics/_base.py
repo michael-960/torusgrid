@@ -2,22 +2,20 @@ from __future__ import annotations
 import threading
 import tqdm
 import time
-import warnings
-from typing import List, Callable
+from typing import List
 import sys
 
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
-import pyfftw
 
-from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
-from michael960lib.common import deprecated, experimental
-from .fields import ComplexField2D, RealField2D, FieldStateFunction
-from .grids import StateFunction, ComplexGridND
+from michael960lib.common import deprecated
 
-from .callbacks import EvolverCallBack
+
+from ..fields import ComplexField2D
+# from ..grids import StateFunction, ComplexGridND
+from ..grids import ComplexGridND
+
+from ..callbacks import EvolverCallBack
 
 
 class GridEvolver:
@@ -146,15 +144,13 @@ class FancyEvolver(GridEvolver):
         super().run_nonstop(N_steps, custom_keyboard_interrupt_handler)
 
 
-    @overrides(GridEvolver)
-    def start(self):
+    def _start(self):
         super().start()
         sf = self.get_state_function()
         es = self.get_evolver_state()
         self.history.append_state_function(es, sf)
 
-    @overrides(GridEvolver)
-    def on_epoch_end(self, progress_bar: tqdm.tqdm):
+    def _on_epoch_end(self, progress_bar: tqdm.tqdm):
         sf = self.get_state_function()
         es = self.get_evolver_state()
         progress_bar.set_description_str(self.display_format.format(**self.info, **es, **(sf.get_content())))
@@ -162,8 +158,7 @@ class FancyEvolver(GridEvolver):
         for cb in self.callbacks:
             cb.on_call(self, sf)
 
-    @overrides(GridEvolver)
-    def on_nonstop_epoch_end(self):
+    def _on_nonstop_epoch_end(self):
         sf = self.get_state_function()
         es = self.get_evolver_state()
         sys.stdout.write('\r' + self.display_format.format(**self.info, **es, **(sf.get_content())))
@@ -171,8 +166,7 @@ class FancyEvolver(GridEvolver):
         for cb in self.callbacks:
             cb.on_call(self, sf)
 
-    @overrides(GridEvolver)
-    def end(self):
+    def _end(self):
         super().end()
         self.history.commit(self.label, self.field)
 
@@ -241,27 +235,10 @@ class NoiseGenerator2D:
         if noise_type == 'gaussian':
             self.generate = lambda: np.random.normal(0, amplitude, size=(Nx, Ny))
         else:
-            raise ValueError(f'{noise_error} is not a recognized noise type')
+            raise ValueError(f'{noise_type} is not a recognized noise type')
 
     def generate(self):
         raise NotImplementedError()
-
-
-class FreeEnergyFunctional2D:
-    def __init__(self):
-        raise NotImplementedError()
-
-    def free_energy_density(self, field: ComplexField2D):
-        raise NotImplementedError()
-
-    def free_energy(self, field: ComplexField2D):
-        return np.sum(self.free_energy_density(field)) * field.dV
-
-    def derivative(self, field: ComplexField2D):
-        raise NotImplementedError()
-
-    def mean_free_energy_density(self, field: ComplexField2D):
-        return np.mean(self.free_energy_density(field))
 
 
 class EvolverError(IllegalActionError):
@@ -275,6 +252,8 @@ class EvolverError(IllegalActionError):
         # deprecated
         self.minimizer = self.evolver
 
-
 # deprecated
-MinimizerError = EvolverError
+# MinimizerError = EvolverError
+
+
+

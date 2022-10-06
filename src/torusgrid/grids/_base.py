@@ -25,9 +25,11 @@ class ComplexGridND:
         self.psi: npt.NDArray[np.complex128]
         self.psi_k: npt.NDArray[np.complex128]
 
+        self.shape: Tuple[int, ...]
+
         self.set_resolution(shape)
 
-    def set_resolution(self, shape: Tuple[int]) -> None:
+    def set_resolution(self, shape: Tuple[int, ...]) -> None:
         '''Set the resolution (i.e. shape).
         
         Parameters:
@@ -93,7 +95,7 @@ class ComplexGridND:
     def copy(self) -> Self:
         '''Generate a new object with the same grid data.
         '''
-        field1 = ComplexGridND(self.shape)
+        field1 = self.__class__(self.shape)
         field1.set_psi(self.psi)
         return field1
 
@@ -121,6 +123,10 @@ class RealGridND(ComplexGridND):
 
     def __init__(self, shape: Tuple[int, ...]):
         super().__init__(shape)
+
+        self.psi: npt.NDArray[np.float64]
+        self.psi_k: npt.NDArray[np.complex128]
+
         self._isreal = True
 
     def set_resolution(self, shape: Tuple[int, ...]) -> None:

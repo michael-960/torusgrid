@@ -1,23 +1,12 @@
 from __future__ import annotations
-import threading
-import tqdm
-import time
-import warnings
-from typing import List, Callable
-import sys
 from enum import Enum
 
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy.fft import fft2, ifft2, rfft2, irfft2, set_global_backend
-import pyfftw
 
-from michael960lib.math import fourier
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
-from michael960lib.common import deprecated, experimental
 
-from .fields import ComplexField2D, RealField2D, FieldStateFunction
 
+# deprecated: use hooks instead
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

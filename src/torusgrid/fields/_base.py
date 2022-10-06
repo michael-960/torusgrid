@@ -1,12 +1,16 @@
 from __future__ import annotations
-from typing import Tuple
+from abc import ABC, abstractmethod
+from typing import Generic, Tuple, Type, TypeVar
 import shutil
+from typing_extensions import Self
 
 import numpy as np
+import numpy.typing as npt
 
 from michael960lib.math import fourier
 from michael960lib.common import overrides
-from ..grids import ComplexGrid2D, ComplexGridND, RealGridND
+from ..grids import ComplexGridND, RealGridND
+
 
 
 
@@ -47,12 +51,12 @@ class ComplexFieldND(ComplexGridND):
         return state
 
     @overrides(ComplexGridND)
-    def copy(self):
+    def copy(self) -> Self:
         field1 = self.__class__(self.size, self.shape)
         field1.set_psi(self.psi)
         return field1
 
-    @overrides(ComplexGrid2D)
+    @overrides(ComplexGridND)
     def save(self, fname: str, verbose=False):
         tmp_name = f'{fname}.tmp.file'
         if verbose:
@@ -92,6 +96,29 @@ class RealFieldND(ComplexFieldND, RealGridND):
         self.dK = np.array(DK)
 
         self.dV = np.prod(self.dR)
+
+
+
+T = TypeVar('T', bound=ComplexFieldND)
+
+class FreeEnergyFunctional(ABC, Generic[T]):
+    def __init__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def free_energy_density(self, field: T) -> npt.NDArray:
+        raise NotImplementedError()
+
+    def free_energy(self, field: T) -> float:
+        return np.sum(self.free_energy_density(field)) * field.dV
+
+    @abstractmethod
+    def derivative(self, field: T):
+        raise NotImplementedError()
+
+    def mean_free_energy_density(self, field: T) -> float:
+        return np.mean(self.free_energy_density(field))
+
 
 
 

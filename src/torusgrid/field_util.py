@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import List, Literal, Tuple, Union, overload
-from matplotlib.fontconfig_pattern import Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -8,10 +7,10 @@ from matplotlib import pyplot as plt
 from .fields import ComplexField2D, RealField2D, FieldOperationError
 
 
-
 def plot(fields: ComplexField2D|List[ComplexField2D],
         cmap: str='jet', show: bool=True, vlim: Tuple[float, float]=(-1., 1.), 
         colorbar: bool=True, ncols=4, fig_dims=(4, 4)):
+
     if not type(fields) in [tuple, list]:
         assert isinstance(fields, ComplexField2D)
         fields = [fields]
@@ -241,7 +240,8 @@ def crop(field: ComplexField2D, ratio_x1: float, ratio_x2: float, ratio_y1: floa
         return field1
 
 
-def concat(field_a: ComplexField2D, field_b: ComplexField2D, direction='horizontal', in_place=False):
+def concat(field_a: ComplexField2D, field_b: ComplexField2D, 
+        direction='horizontal', in_place=False):
     if not direction in ['horizontal', 'vertical']:
         raise ValueError(f'\'{direction}\' is not a valid direction')
 
@@ -286,9 +286,12 @@ def concat(field_a: ComplexField2D, field_b: ComplexField2D, direction='horizont
             return field_a
 
 
-def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='center', in_place=False, position_format='ratio',
-        periodic_boundary=False):
-    '''TODO
+def insert(
+        field_large: ComplexField2D, field_small: ComplexField2D, 
+        position='center', in_place=False, position_format='ratio',
+        periodic_boundary=False
+    ):
+    '''
     '''
     valid = False
     if position in ['left', 'right', 'top', 'bottom', 'center']:
@@ -300,7 +303,7 @@ def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='c
         raise ValueError(f'\'{position}\' is not a valid insertion position')
 
     if not position_format in ['ratio', 'points', 'length']:
-        raise ValueError(f'\'{ratio}\' is not a valid position format')
+        raise ValueError(f'\'{position_format}\' is not a valid position format')
 
     if not (field_small.Lx <= field_large.Lx and field_small.Ly <= field_small.Ly):
         raise FieldOperationError('the first model must have smaller dimensions than the second one')
@@ -316,10 +319,10 @@ def insert(field_large: ComplexField2D, field_small: ComplexField2D, position='c
     if position == 'right':
         box_X = field_large.Nx - box_Nx
 
-    if param['position'] == 'top':
+    if position == 'top':
         box_Y = 0
         
-    if param['position'] == 'bottom':
+    if position == 'bottom':
         box_Y = field_large.Ny - box_Ny
 
     if type(position) is tuple:

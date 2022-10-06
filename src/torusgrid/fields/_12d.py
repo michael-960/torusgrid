@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Tuple, overload
+from typing_extensions import Self
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -51,7 +52,7 @@ class ComplexField2D(ComplexFieldND):
             else:
                 raise ValueError(f'incompatible shape for 2D size: {arg1}')
         else:
-            super().set_size((Lx, Ly))
+            super().set_size((arg1, arg2))
 
         self.setup_convenience_variables()
 
@@ -93,7 +94,7 @@ class ComplexField2D(ComplexFieldND):
         return state
     
     @overrides(ComplexFieldND)
-    def copy(self):
+    def copy(self) -> Self:
         field1 = self.__class__(self.Lx, self.Ly, self.Nx, self.Ny)
         field1.set_psi(self.psi)
         return field1
@@ -149,7 +150,7 @@ class RealField2D(RealFieldND, ComplexField2D):
         return ComplexField2D.export_state(self)
 
     @overrides(RealFieldND)
-    def copy(self):
+    def copy(self) -> Self:
         return ComplexField2D.copy(self)
 
 
