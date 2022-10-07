@@ -24,9 +24,9 @@ else:
             if base is Generic:
                 del new_bases[i]
 
-        cls.__bases__ = tuple(new_bases)
+        if len(new_bases) == 0: new_bases = [object]
 
-        cls_ = meta_(cls.__name__, cls.__bases__, dict(cls.__dict__))
+        cls_ = meta_(cls.__name__, tuple(new_bases), dict(cls.__dict__))
         # class cls_(cls, metaclass=meta_):
         #     ...
         cls_.__name__ = cls.__name__

@@ -1,37 +1,29 @@
-from typing import TypeVar
+from typing import Optional, TypeVar
 from torusgrid.dynamics.hooks.base import EvolverHooks
-from rich.progress import Progress
+import time
+
+from ...misc import console
+import rich
+
 
 T = TypeVar('T')
 
-class DefaultEvolverHooks(EvolverHooks[T]):
-    def __init__(self):
-        ...
-
-    def on_multisteps_start(self, n_steps: int, n_epochs: int):
-        self.pbar = Progress()
-        self.task = self.pbar.add_task('multistep', total=n_epochs)
-
-    def multisteps_enter(self):
+class DefaultHooks(EvolverHooks[T]):
+    def on_start(self, n_steps: int, n_epochs: Optional[int]):
+        self.pbar = console.make_progress_bar()
+        self.task = self.pbar.add_task('', total=n_epochs, start=(n_epochs is not None))
+        
+    def enter_(self):
         self.pbar.__enter__()
 
-    def on_multisteps_step(self, step: int):
-        self.pbar.advance(self.task)
-
-    def multisteps_exit(self, *args):
+    def exit_(self, *args):
+        time.sleep(0.1)
         self.pbar.__exit__(*args)
 
-    def on_multisteps_end(self): ...
+    def on_step(self, step: int):
+        self.pbar.advance(self.task)
 
-    def on_nonstop_start(self, n_steps: int): ...
 
-    def nonstop_enter(self): ...
-
-    def on_nonstop_step(self, step: int): ...
-
-    def nonstop_exit(self, *args): ...
-
-    def on_nonstop_end(self): ...
-
-    def on_interrupt(self):
-        self.evolver.set_continue_flag(False)
+    def on_preinterrupt(self):
+        rich.get_console().log('Interrupted')
+    

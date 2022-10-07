@@ -44,7 +44,7 @@ class SecondOrderRK4(TemporalEvolver[T_co]):
         raise NotImplementedError
                                   
     def step(self):
-      self.age += self.dt
+      self.set_age(self.age + self.dt)
 
       self.grid_tmp.psi[:] = self.grid.psi
       self.dgrid_tmp.psi[:] = self.dgrid.psi

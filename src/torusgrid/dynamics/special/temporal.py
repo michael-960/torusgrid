@@ -22,9 +22,10 @@ class TemporalEvolver(Evolver[T]):
     def __init__(self, subject: T, dt: float):
         super().__init__(subject)
         self.dt = dt
-        self.age = 0.
+        self.set_age(0)
 
     def set_age(self, age: float):
         self.age = age
+        self.data['age'] = age
 
 

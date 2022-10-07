@@ -34,7 +34,7 @@ class SplitStep(TemporalEvolver[T_co]):
         raise NotImplementedError
 
     def step(self):
-        self.age += self.dt
+        self.set_age(self.age + self.dt)
 
         for step in self.realspace_steps:
             step(self.dt/2)

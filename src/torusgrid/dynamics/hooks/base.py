@@ -2,19 +2,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Dict, Generic, List, Optional, TypeVar, final
 from ...misc.typing import generic
 
-
 if TYPE_CHECKING:
     from ..base import Evolver
     from typing_extensions import Concatenate, ParamSpec
 
     P = ParamSpec('P')
-    T = TypeVar('T')
+T = TypeVar('T')
 
-__hook_methods: List[str] = []
+__hook_methods: Dict[str, bool] = {}
 
 def hook(meth: Callable[Concatenate[EvolverHooks, P], None]):
-    __hook_methods.append(meth.__name__)
+    __hook_methods[meth.__name__] = False
     return meth
+
+def reverse_hook(meth: Callable[Concatenate[EvolverHooks, P], None]):
+    __hook_methods[meth.__name__] = True
+    return meth
+
 
 
 @generic
@@ -53,15 +57,15 @@ class EvolverHooks(Generic[T]):
         self.on_step(step)
 
 
-    @hook
+    @reverse_hook
     def multisteps_exit(self, *args):
         self.exit_(*args)
 
-    @hook
+    @reverse_hook
     def on_multisteps_end(self):
         '''
         Called after multistep evolution ends.
-        self.on_end() is called by default.
+        self.on_end() is called by default. Call order is reversed.
         '''
         self.on_end()
 
@@ -84,24 +88,37 @@ class EvolverHooks(Generic[T]):
         '''
         self.on_step(step)
 
-    @hook
+    @reverse_hook
     def nonstop_exit(self, *args):
+        '''
+        Call order is reversed
+        '''
         self.exit_(*args)
 
-    @hook
+    @reverse_hook
     def on_nonstop_end(self):
         '''
         Called after nonstop evolution ends.
         self.on_end() is called by default.
+        Call order ir reversed.
         '''
         self.on_end()
 
     @hook
-    def on_interrupt(self):
+    def on_preinterrupt(self):
         '''
-        Called when evolver is interrupted.
+        Called when evolver is interrupted and **before**
+        the field lock is acquired
         '''
 
+    @hook
+    def on_interrupt(self):
+        '''
+        Called when evolver is interrupted and **after**
+        the field lock is acquired.
+        '''
+
+    @hook
     def bind(self, evolver: Evolver[T]):
         '''
         Bind evolver to hooks
@@ -120,17 +137,41 @@ def combine(*hooks: EvolverHooks):
 
     eh = EvolverHooks()
 
-    def get_combined_func(name):
-        def _combined(*args, **kwargs):
-            for h in hooks:
-                getattr(h, name)(*args, **kwargs)
-        return _combined
+    def get_combined_func(name, reverse=False):
+        if not reverse:
+            def _combined(*args, **kwargs):
+                handled = None
+                for h in hooks:
+                    handled_ = getattr(h, name)(*args, **kwargs)
+                    handled = none_or(handled, handled_)
+                return handled
+            return _combined
+        else:
+            def _combined(*args, **kwargs):
+                handled = None
+                for h in hooks[::-1]:
+                    handled_ = getattr(h, name)(*args, **kwargs)
+                    handled = none_or(handled, handled_)
+                return handled
 
-    for methname in __hook_methods:
-        setattr(eh, methname, get_combined_func(methname))
+            return _combined
+
+
+    for methname, reverse in __hook_methods.items():
+        setattr(eh, methname, get_combined_func(methname, reverse=reverse))
 
     return eh
 
 
+
+def none_or(x: bool|None, y: bool|None):
+    '''
+        True, True/False/None -> True
+        False, False/None -> False
+        None, None -> None
+    '''
+    if x is None: return y
+    if x is True: return True
+    if x is False: return y is True
 
 

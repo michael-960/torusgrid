@@ -1,7 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type, TypeVar
-from .hooks import EvolverHooks, DefaultEvolverHooks
+from typing import Any, Dict, Type, TypeVar
+
+import rich
+
+from .hooks import EvolverHooks, DefaultHooks
 from ..misc import context
 from ..misc.typing import generic
 
@@ -16,22 +19,22 @@ from typing import Generic, Optional
 
 
 @generic
-class Evolver(ABC, Generic[T], EvolverHooks[T]):
+class Evolver(ABC, Generic[T]):
     '''
     An Evolver handles the evolution of an object. There's no limit on
     the object's type.
     '''
     def __init__(self, subject: T):
         self.subject = subject
-
-        self.started = False
-        self.ended = False
-        self.name = 'null'
         self._continue_flag = True
-
 
         # Backward compatibility
         self.run_nonstop = self.run
+        
+        self.data: Dict[str, Any] = {}
+        '''
+        Used to store fields used by hooks.
+        '''
 
     @abstractmethod
     def step(self):
@@ -52,10 +55,11 @@ class Evolver(ABC, Generic[T], EvolverHooks[T]):
             n_steps: int, n_epochs: int, 
             hooks: Optional[EvolverHooks]=None):
         '''
-        Run minimization loop 
+        Run evolution loop 
         '''
         hooks = self.resolve_hooks(hooks)
 
+        self.start()
         hooks.on_multisteps_start(n_steps, n_epochs)
         with context.Context(hooks.multisteps_enter, hooks.multisteps_exit):
             for i in range(n_epochs):
@@ -68,14 +72,16 @@ class Evolver(ABC, Generic[T], EvolverHooks[T]):
 
     def run(self, n_steps: int, hooks: Optional[EvolverHooks]=None):
         '''
-        Run minimization loop. 
+        Run evolution loop. 
         hooks.on_nonstop_step() will be called every [n_steps] steps.
         The minimization will be run on a separate thread.
         '''
         hooks = self.resolve_hooks(hooks)
 
         lock = threading.Lock()
+
         def run():
+            self.start()
             hooks.on_nonstop_start(n_steps)
             with context.Context(hooks.nonstop_enter, hooks.nonstop_exit):
                 i = 0
@@ -98,8 +104,12 @@ class Evolver(ABC, Generic[T], EvolverHooks[T]):
                 if not self.get_continue_flag():
                     break
             except KeyboardInterrupt:
+                hooks.on_preinterrupt()
                 with lock:
-                    hooks.on_interrupt()
+                    handled = hooks.on_interrupt()
+                    if not handled:
+                        self.set_continue_flag(False)
+
         thread.join()
 
     def get_continue_flag(self) -> bool:
@@ -114,6 +124,18 @@ class Evolver(ABC, Generic[T], EvolverHooks[T]):
         none of the hook methods are implemented.
         '''
         if hooks is None:
-            return self + DefaultEvolverHooks()
-        return self + hooks
+            _hooks = DefaultHooks()
+        else:
+            _hooks = hooks
+
+        _hooks.bind(self)
+        return _hooks
+
+    def start(self) -> None:
+        '''
+        A hook method that is called before evolution
+        '''
+        self.data.clear()
+
+
 
