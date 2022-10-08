@@ -1,4 +1,5 @@
 from typing import Optional, TypeVar
+import rich
 
 from rich.align import AlignMethod
 
@@ -27,7 +28,7 @@ class Display(EvolverHooks):
     def __init__(self): ...
     
     def on_start(self, n_steps, n_epochs):
-        self.live = Live('')
+        self.live = Live('', console=rich.get_console())
         
         if '__live__' in self.evolver.data.keys():
             raise RuntimeError('Only one Display object is allowed')
@@ -35,13 +36,27 @@ class Display(EvolverHooks):
         self.evolver.data['__live__'] = self.live
         
     def enter_(self):
-        self.live.__enter__()
+        self.live.start()
+        #self.live.__enter__()
         
     def exit_(self, *args):
-        self.live.__exit__(*args)
+        #self.live.__exit__(*args)
+        self.live.stop()
         del self.evolver.data['__live__']
         del self.live
 
+    def pre_interrupt(self):
+        ...
+
+    def on_interrupt(self):
+        ...
+
+    def post_interrupt(self):
+        ...
+        # self.live = Live('', console=rich.get_console())
+        # self.evolver.data['__live__'] = self.live
+        # self.live.__enter__()
+        #
 
 class Panel(EvolverHooks):
     def __init__(self, title: str='', title_align: AlignMethod='center', **kwargs) -> None:
@@ -56,12 +71,12 @@ class Panel(EvolverHooks):
             n_steps: int, n_epochs: Optional[int]):
 
         self.live: Live = self.evolver.data['__live__']
-        self.panel = Panel_(Group(), 
+        self.panel = Panel_(
+                Group(), 
                 title=self.get_title(),
                 title_align=self.title_align,
                 **self.kwargs
             )
-
         self.evolver.data['__panel__'] = self.panel
 
     def enter_(self):

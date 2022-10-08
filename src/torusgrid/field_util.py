@@ -1,10 +1,11 @@
 from __future__ import annotations
-from typing import List, Literal, Tuple, Union, overload
+from typing import Any, List, Literal, Tuple, TypeVar, Union, overload, Optional
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from .fields import ComplexField2D, RealField2D, FieldOperationError
+from .grids import ComplexGridND
 
 
 def plot(fields: ComplexField2D|List[ComplexField2D],
@@ -402,19 +403,32 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
         field1.set_psi(psi1)
         return field1
 
+T = TypeVar('T', bound=ComplexGridND)
 
-def liquefy(field: ComplexField2D, psi0=None, in_place=False):
+
+
+@overload
+def liquefy(field: T, psi0=None, *, in_place: Literal[False]=False) -> T: ...
+
+@overload
+def liquefy(field: ComplexGridND, psi0=None, *, in_place: Literal[True]) -> None: ...
+
+@overload
+def liquefy(field: T, psi0=None, *, in_place: bool=False) -> None|T: ...
+
+def liquefy(
+    field, psi0=None, *,
+    in_place: bool=False):
+
     if psi0 is None:
         psi0 = np.mean(field.psi)
     
     if in_place:
         field.set_psi(psi0)
         return
+
     else:
         field1 = field.copy()
         field1.set_psi(psi0)
         return field1
-
-
-
 

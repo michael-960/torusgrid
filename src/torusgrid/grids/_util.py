@@ -1,5 +1,6 @@
 import numpy as np
-from ._base import ComplexGridND, RealGridND
+from ._complex import ComplexGridND
+from ._real import RealGridND
 
 
 

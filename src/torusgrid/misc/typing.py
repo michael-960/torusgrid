@@ -10,6 +10,7 @@ else:
         Remove generic class inheritance and add trivial subscript
         such that A[T] = A.
         '''
+
         meta = type(cls) 
         class meta_(meta):
             def __getitem__(self, key): return self
@@ -26,11 +27,14 @@ else:
 
         if len(new_bases) == 0: new_bases = [object]
 
-        cls_ = meta_(cls.__name__, tuple(new_bases), dict(cls.__dict__))
-        # class cls_(cls, metaclass=meta_):
-        #     ...
+
+        cls_ = type(cls.__name__, tuple(new_bases), dict(cls.__dict__))
         cls_.__name__ = cls.__name__
         cls_.__qualname__ = cls.__qualname__
+
+        def _get(*args): return cls_
+
+        cls_.__class_getitem__ = _get
 
         return cls_
 

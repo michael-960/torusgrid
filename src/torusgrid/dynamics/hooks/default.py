@@ -23,7 +23,6 @@ class DefaultHooks(EvolverHooks[T]):
     def on_step(self, step: int):
         self.pbar.advance(self.task)
 
-
-    def on_preinterrupt(self):
+    def pre_interrupt(self):
         rich.get_console().log('Interrupted')
     

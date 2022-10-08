@@ -19,7 +19,8 @@ def make_progress_bar(console: Optional[Console]=None,
           spinner: Optional[str|Tuple[str,str]]='dots', text: Optional[str]=None,
           count: bool=True, percentage: bool=True,
           time_remaining: bool=True, time_elapsed: bool=True, 
-          *extra_columns: ProgressColumn     
+          *extra_columns: ProgressColumn,
+          transient: bool=False
           ) -> Progress:
       '''
       Return a Rich Progress object
@@ -57,7 +58,7 @@ def make_progress_bar(console: Optional[Console]=None,
           columns.append(TimeElapsedColumn())
   
   
-      progress = Progress(*columns, console=console)
+      progress = Progress(*columns, console=console, transient=transient)
   
       return progress
 

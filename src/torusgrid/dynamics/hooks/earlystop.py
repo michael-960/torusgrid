@@ -3,16 +3,19 @@ from abc import abstractmethod
 from textwrap import dedent
 
 
-from typing import Callable, Literal, TypeVar
+from typing import Callable, Literal, Optional, TypeVar
 
 import rich
 from rich.box import MINIMAL
 from rich.console import Group, RenderableType
 from rich.panel import Panel
+from rich.progress import Progress
 from torusgrid.dynamics.hooks.base import EvolverHooks
 
 
 import numpy as np
+
+from torusgrid.misc.console import make_progress_bar
 
 
 T = TypeVar('T')
@@ -27,7 +30,7 @@ class EarlyStopping(EvolverHooks[T]):
             cumulative: bool=False,
             period: int=1,
             verbose: bool=True,
-            show_status: bool=True
+            show_progress: bool=True
         ):
 
         self.cumulative = cumulative
@@ -36,38 +39,46 @@ class EarlyStopping(EvolverHooks[T]):
         self._badness = 0
 
         self.verbose = verbose
-        self.show_status = show_status
+        self.show_progress = show_progress
 
     def get_status(self) -> RenderableType:
         return dedent(f'''\
             Monitoring: {self.get_monitor_target()}
-            Status: {self._badness}/{self.patience}
-        ''')
+            Status: {self._badness}/{self.patience}'''
+        )
+
+    def on_start(self, n_steps: int, n_epochs: Optional[int]):
+        self._badness = 0
 
     def enter_(self):
-        if self.show_status:
+        if self.show_progress:
             self.panel: Panel = self.evolver.data['__panel__']
-            self.status: Panel = Panel(self.get_status(), 
-                    box=MINIMAL, 
-                    title='Early Stopping',
-                    title_align='left')
-            self.panel.renderable = Group(self.panel.renderable, self.status)
+
+            self.pbar = make_progress_bar(text=f'Monitoring {self.get_monitor_target()}', 
+                    transient=True)
+
+            self.task = self.pbar.add_task(self.get_monitor_target(), total=self.patience)
+
+            self.panel.renderable = Group(self.panel.renderable, self.pbar)
+
+
 
     def on_step(self, step: int):
         if step % self.check_period == 0:
             if self.condition():
 
-                if self.show_status:
-                    self.status.renderable = self.get_status()
+                if self.show_progress:
+                    self.pbar.advance(self.task)
 
                 self._badness += 1
             else:
-                if not self.cumulative: self._badness = 0
+                if not self.cumulative:
+                    self._badness = 0
+                    self.pbar.update(self.task, completed=0)
 
             if self._badness >= self.patience:
                 if self.verbose:
-                    rich.get_console().log('Stopping critierion met, quitting ...')
-                
+                    rich.get_console().log('Critierion met, stopping...')
                 self.evolver.set_continue_flag(False)
 
     @abstractmethod
@@ -85,7 +96,10 @@ class DetectSlow(EarlyStopping[T]):
             monotone: Literal['increase', 'decrease', 'ignore'],
             patience: float, *, 
             cumulative: bool = False,
-            period: int = 1, verbose: bool = True):
+            period: int = 1, 
+            verbose: bool = True,
+            show_progress: bool = True
+            ):
         '''
         Monitor a value (via target), and stop the evolver when the value
         changes sufficiently slowly.
@@ -94,7 +108,15 @@ class DetectSlow(EarlyStopping[T]):
         is provided, evolve.data[target] will be used.
         '''
 
-        super().__init__(patience, cumulative=cumulative, period=period)
+        super().__init__(patience, 
+                cumulative=cumulative,
+                period=period,
+                verbose=verbose,
+                show_progress=show_progress)
+
+        self.rtol = rtol
+        self.atol = atol
+
         self.target = target
 
         self._val_prev: None|float = None
@@ -109,11 +131,17 @@ class DetectSlow(EarlyStopping[T]):
 
         self.verbose = verbose
 
-        
         self._target = str(self.target)
+
+    def enter_(self):
+        super().enter_()
 
     def get_monitor_target(self):
         return self._target
+
+    def on_start(self, n_steps: int, n_epochs: Optional[int]):
+        self._badness = 0
+        self._val_prev = None
 
     def condition(self):
         if isinstance(self.target, str):

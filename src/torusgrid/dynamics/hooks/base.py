@@ -105,7 +105,7 @@ class EvolverHooks(Generic[T]):
         self.on_end()
 
     @hook
-    def on_preinterrupt(self):
+    def pre_interrupt(self):
         '''
         Called when evolver is interrupted and **before**
         the field lock is acquired
@@ -117,6 +117,13 @@ class EvolverHooks(Generic[T]):
         Called when evolver is interrupted and **after**
         the field lock is acquired.
         '''
+
+    @reverse_hook
+    def post_interrupt(self):
+        '''
+        Called after evolver is interrupted
+        '''
+
 
     @hook
     def bind(self, evolver: Evolver[T]):

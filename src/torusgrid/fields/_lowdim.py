@@ -5,7 +5,6 @@ from typing_extensions import Self
 import numpy as np
 from matplotlib import pyplot as plt
 
-from michael960lib.common import overrides
 
 from ..grids import ComplexGridND
 from ._base import ComplexFieldND, RealFieldND
@@ -24,7 +23,7 @@ class ComplexField2D(ComplexFieldND):
     def set_dimensions(self, size, shape): ...
     @overload
     def set_dimensions(self, Lx, Ly, Nx, Ny): ...
-    @overrides(ComplexFieldND)
+
     def set_dimensions(self, *args):
         if len(args) == 2:
             if type(args[0]) is tuple and type(args[1]) is tuple:
@@ -44,7 +43,7 @@ class ComplexField2D(ComplexFieldND):
     def set_size(self, Lx: float, Ly: float): ...
     @overload
     def set_size(self, size: Tuple[int, int]): ...
-    @overrides(ComplexFieldND)
+
     def set_size(self, arg1, arg2=None):
         if type(arg1) is tuple and arg2 is None:
             if len(arg1) == 2:
@@ -86,14 +85,12 @@ class ComplexField2D(ComplexFieldND):
         self.K4 = self.K2**2
         self.K6 = self.K2 * self.K4
 
-    @overrides(ComplexFieldND)
     def export_state(self):
         state = super().export_state()
         state['Lx'] = self.Lx
         state['Ly'] = self.Ly
         return state
     
-    @overrides(ComplexFieldND)
     def copy(self) -> Self:
         field1 = self.__class__(self.Lx, self.Ly, self.Nx, self.Ny)
         field1.set_psi(self.psi)
@@ -125,7 +122,7 @@ class RealField2D(RealFieldND, ComplexField2D):
     def set_dimensions(self, size: Tuple[int, int], shape: Tuple[int, int]): ...
     @overload
     def set_dimensions(self, Lx: float, Ly: float, Nx: int, Ny: int): ...
-    @overrides(RealFieldND)
+
     def set_dimensions(self, *args):
         ComplexField2D.set_dimensions(self, *args)
 
@@ -133,7 +130,7 @@ class RealField2D(RealFieldND, ComplexField2D):
     def set_size(self, Lx: float, Ly: float): ...
     @overload
     def set_size(self, size: Tuple[int]): ...
-    @overrides(RealFieldND)
+
     def set_size(self, arg1, arg2=None):
         if type(arg1) is tuple and arg2 is None:
             if len(arg1) == 2:
@@ -145,11 +142,9 @@ class RealField2D(RealFieldND, ComplexField2D):
 
         self.setup_convenience_variables()
 
-    @overrides(RealFieldND)
     def export_state(self) -> dict:
         return ComplexField2D.export_state(self)
 
-    @overrides(RealFieldND)
     def copy(self) -> Self:
         return ComplexField2D.copy(self)
 

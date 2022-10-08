@@ -2,8 +2,12 @@ from .fields import *
 
 from .grids import *
 
+
 from . import proxies
 
+from . import dynamics
+
+from . import typing
 
 from .field_util import (
         plot, set_size, liquefy, interface, insert,

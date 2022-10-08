@@ -2,8 +2,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Type, TypeVar
 
-import rich
-
 from .hooks import EvolverHooks, DefaultHooks
 from ..misc import context
 from ..misc.typing import generic
@@ -15,7 +13,6 @@ import time
 T = TypeVar('T')
 
 from typing import Generic, Optional
-
 
 
 @generic
@@ -35,6 +32,8 @@ class Evolver(ABC, Generic[T]):
         '''
         Used to store fields used by hooks.
         '''
+
+        self.thread: threading.Thread|None = None
 
     @abstractmethod
     def step(self):
@@ -78,15 +77,15 @@ class Evolver(ABC, Generic[T]):
         '''
         hooks = self.resolve_hooks(hooks)
 
-        lock = threading.Lock()
+        self._lock = threading.Lock()
 
-        def run():
+        def run_():
             self.start()
             hooks.on_nonstop_start(n_steps)
             with context.Context(hooks.nonstop_enter, hooks.nonstop_exit):
                 i = 0
                 while True:
-                    with lock:
+                    with self._lock:
                         if not self.get_continue_flag():
                             break
                         self.run_steps(n_steps)
@@ -95,8 +94,8 @@ class Evolver(ABC, Generic[T]):
 
             hooks.on_nonstop_end()
 
-        thread = threading.Thread(target=run)
-        thread.start()
+        self.thread = threading.Thread(target=run_)
+        self.thread.start()
 
         while True:
             try:
@@ -104,13 +103,18 @@ class Evolver(ABC, Generic[T]):
                 if not self.get_continue_flag():
                     break
             except KeyboardInterrupt:
-                hooks.on_preinterrupt()
-                with lock:
-                    handled = hooks.on_interrupt()
-                    if not handled:
-                        self.set_continue_flag(False)
+                hooks.pre_interrupt()
+                
+                self._lock.acquire()
+                handled = hooks.on_interrupt()
+                if self._lock.locked(): self._lock.release()
 
-        thread.join()
+                if not handled:
+                    self.set_continue_flag(False)
+
+                hooks.post_interrupt()
+
+        self.thread.join()
 
     def get_continue_flag(self) -> bool:
         return self._continue_flag
@@ -137,5 +141,14 @@ class Evolver(ABC, Generic[T]):
         '''
         self.data.clear()
 
+
+    def wait(self):
+        '''
+            Wait till the evolution thread ends
+        '''
+        if self.thread is not None:
+            if self._lock.locked():
+                self._lock.release()
+            self.thread.join()
 
 
