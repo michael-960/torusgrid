@@ -15,20 +15,8 @@ from ..typing import SizeLike
 from ._base import Field
 
 
-class RealField(RealGrid, Field[np.floating]):
-    def __init__(
-            self, 
-            size: Sequence[np.floating|float] | npt.NDArray[np.floating],
-            shape: Tuple[int, ...], *,
-            precision: PrecisionStr = 'double',
-            fft_axes: Optional[Tuple[int,...]] = None
-        ):
-        super().__init__(shape, precision=precision, fft_axes=fft_axes)
-        self._init_coordinate_vars()
-        self.set_size(size)
-
+class RealField(Field[np.floating], RealGrid):
     def _update_coordinate_vars(self) -> None:
-
         R, K, DR, DK = [], [], [], []
         for i in range(self.rank):
             if i == self.last_fft_axis:
@@ -47,13 +35,4 @@ class RealField(RealGrid, Field[np.floating]):
         self._dK[...] = np.array(DK)
 
 
-    def copy(self) -> Self:
-        field1 = self.__class__(
-                self.size, self.shape,
-                precision=self._precision,
-                fft_axes=self._fft_axes
-        )
-
-        field1.set_psi(self.psi)
-        return field1
-
+    

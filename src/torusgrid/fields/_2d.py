@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, overload, Optional
+from typing import Tuple, TypeVar, overload, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -12,9 +12,25 @@ from ..typing import FloatLike
 
 from ..grids import Grid2D
 from ._complex import ComplexField
+from ._real import RealField
 from ._base import Field
 
-class Field2D(Grid2D, Field):
+
+T = TypeVar('T', np.complexfloating, np.floating)
+
+class Field2D(Field[T], Grid2D):
+    def __init__(self, 
+            lx: FloatLike, ly: FloatLike,
+            nx: int, ny: int, *,
+            precision: PrecisionStr,
+            fft_axes: Optional[Tuple[int,...]]=None
+            ):
+
+        super().__init__(
+            (lx, ly), (nx, ny),
+            precision=precision, fft_axes=fft_axes
+        )
+
     @property
     def lx(self) -> np.floating:
         return self.size[0]
@@ -80,29 +96,15 @@ class Field2D(Grid2D, Field):
             super().set_size((x1, x2))
 
 
-class ComplexField2D(Field2D, ComplexField):
-    def __init__(self, 
-            lx: FloatLike, ly: FloatLike,
-            nx: int, ny: int, *,
-            precision: PrecisionStr,
-            fft_axes: Optional[Tuple[int,...]]=None
-            ):
-        super().__init__(
-                (lx, ly), (nx, ny),
-                precision=precision, fft_axes=fft_axes
-        )
+class ComplexField2D(Field2D[np.complexfloating], ComplexField):
+    '''
+    2D complex field
+    '''
 
 
-class RealField2D(Field2D, ComplexField):
-    def __init__(self, 
-            lx: FloatLike, ly: FloatLike,
-            nx: int, ny: int, *,
-            precision: PrecisionStr,
-            fft_axes: Optional[Tuple[int,...]]=None
-            ):
-        super().__init__(
-                (lx, ly), (nx, ny),
-                precision=precision, fft_axes=fft_axes
-        )
+class RealField2D(Field2D[np.floating], RealField):
+    '''
+    2D real field
+    '''
 
 

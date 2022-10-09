@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Tuple, Union
-from typing_extensions import Self
+from typing import Optional, Tuple, Union, final
 
 import numpy as np
 import numpy.typing as npt
@@ -35,7 +34,6 @@ class RealGrid(Grid[np.floating]):
         The last axis in self.fft_axes must be even
         (if not it will be made even automatically)
         '''
-        self._isreal = True
         self._precision = precision
 
         if fft_axes is None:
@@ -61,17 +59,6 @@ class RealGrid(Grid[np.floating]):
         self._psi_k = pyfftw.zeros_aligned(
                 shape_k, dtype=get_complex_dtype(self._precision))
 
-    def copy(self) -> Self:
-        '''Generate a new object with the same grid data.
-        '''
-        grid1 = self.__class__(
-                    self.shape,
-                    precision=self._precision,
-                    fft_axes=self._fft_axes
-                )
-        grid1.set_psi(self.psi)
-        return grid1
-    
     def set_psi(self, psi1: Union[float, npt.NDArray[np.floating]]):
         if not np.isscalar(psi1):
             assert isinstance(psi1, np.ndarray)
@@ -81,6 +68,10 @@ class RealGrid(Grid[np.floating]):
         if not np.all(np.isreal(psi1)):
             raise ValueError(f'array is complex') 
         self.psi[...] = psi1
+
+    @property
+    def isreal(self): return True
+
 
 
 

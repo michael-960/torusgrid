@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing_extensions import Self
 
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, final
 
 import numpy as np
 import numpy.typing as npt
@@ -10,6 +10,7 @@ import pyfftw
 from ..typing import PrecisionStr, get_complex_dtype
 
 from ._base import Grid
+
 
 class ComplexGrid(Grid[np.complexfloating]):
     '''
@@ -27,9 +28,6 @@ class ComplexGrid(Grid[np.complexfloating]):
         
         Parameters: shape: tuple of integers (d1, d2, ..., dN),
         '''
-
-    
-        self._isreal = False
         self._precision = precision
         
         self._psi = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
@@ -39,7 +37,6 @@ class ComplexGrid(Grid[np.complexfloating]):
             self._fft_axes = tuple(np.arange(self.rank))
         else:
             self._fft_axes = fft_axes
-
 
     def set_psi(self, 
             psi1: Union[complex,
@@ -58,17 +55,10 @@ class ComplexGrid(Grid[np.complexfloating]):
 
         self.psi[...] = psi1
 
-    def copy(self) -> Self:
-        '''Generate a new object with the same grid data.
-        '''
-        grid1 = self.__class__(
-                    self.shape,
-                    precision=self._precision,
-                    fft_axes=self._fft_axes
-                )
-        grid1.set_psi(self.psi)
-        return grid1
+    @property
+    def isreal(self): return False
 
+    
 
 
     # def save(self, fname: str, verbose=False) -> None:

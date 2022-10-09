@@ -1,7 +1,7 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
-from typing import Generic, Tuple, TypeVar, Union
+from typing import Generic, Optional, Tuple, TypeVar, Union
 from typing_extensions import Self
 
 import numpy as np
@@ -30,7 +30,16 @@ class Grid(ABC, Generic[T]):
     _precision: PrecisionStr
     _fft_axes: Tuple[int, ...]
 
-    _isreal: bool
+    @abstractmethod
+    def __init__(self, 
+            shape: Tuple[int, ...], *,
+            precision: PrecisionStr='double',
+            fft_axes: Optional[Tuple[int,...]]=None
+        ): ...
+
+
+    @abstractproperty
+    def isreal(self) -> bool: ...
     
     def initialize_fft(self, **fftwargs) -> None:
         '''Initialize the FFTW forward and backward plans. By default the
@@ -80,20 +89,23 @@ class Grid(ABC, Generic[T]):
     def last_fft_axis(self): return self._fft_axes[-1]
 
     @property
-    def isreal(self): return self._isreal
-
-    @property
     def psi(self): 'real space data'; return self._psi
 
     @property
     def psi_k(self): 'k-space data'; return self._psi_k
 
-
-    @abstractmethod
     def copy(self) -> Self:
+        '''Generate a new object with the same grid data.
         '''
-        Generate a new object with the same grid data.
-        '''
+        grid1 = self.__class__(
+                    self.shape,
+                    precision=self._precision,
+                    fft_axes=self._fft_axes
+                )
+        grid1.set_psi(self.psi)
+        return grid1
+
+    
 
 
 

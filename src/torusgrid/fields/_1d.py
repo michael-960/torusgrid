@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 
-from typing import Tuple, overload
+from typing import Tuple, TypeVar, overload
 from typing_extensions import Self
 
 import numpy as np
@@ -19,10 +19,18 @@ from ._complex import ComplexField
 from ._real import RealField
 from ._base import Field
 
+T = TypeVar('T', np.complexfloating, np.floating)
 
+class Field1D(Field[T], Grid1D):
+    def __init__(
+            self, 
+            l: FloatLike, n: int, *,
+            precision: PrecisionStr):
 
-class Field1D(Grid1D, Field):
-    
+        super().__init__(
+            (l,), (n,),
+            precision=precision, fft_axes=(0,)
+        )
 
     @property
     def l(self) -> np.floating:
@@ -62,29 +70,22 @@ class Field1D(Grid1D, Field):
             super().set_size((x,))
 
     def copy(self) -> Self:
-        f = self.__class__(self.l, self.n, precision=self._precision)
+        f = self.__class__(
+                self.l, self.n,
+                precision=self._precision
+            )
         return f
 
 
-
-class ComplexField1D(Field1D, ComplexField):
-    def __init__(self, 
-            l: FloatLike, n: int, *,
-            precision: PrecisionStr):
-
-        super().__init__(
-                (l,), (n,),
-                precision=precision, fft_axes=(0,)
-        )
+class ComplexField1D(Field1D[np.complexfloating], ComplexField):
+    '''
+    1D complex field
+    '''
 
 
-class RealField1D(Field1D, RealField):
-    def __init__(self, 
-            l: FloatLike, n: int, *,
-            precision: PrecisionStr):
-        super().__init__(
-                (l,), (n,),
-                precision=precision, fft_axes=(0,)
-        )
+class RealField1D(Field1D[np.floating], RealField):
+    '''
+    1D real field
+    '''
 
 

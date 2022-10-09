@@ -1,13 +1,13 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TypeVar, final
+from typing import Optional, Sequence, Tuple, TypeVar, final
+from typing_extensions import Self
 
 import numpy as np
 import numpy.typing as npt
 
-from torusgrid.typing.general import NPFloat
 
-from ..typing import get_real_dtype, SizeLike
+from ..typing import get_real_dtype, SizeLike, PrecisionStr, NPFloat
 
 from ..grids import Grid
 
@@ -25,11 +25,36 @@ class Field(Grid[T]):
     _R: npt.NDArray[np.floating]
     _K: npt.NDArray[np.floating]
 
+    _K2: npt.NDArray[np.floating]
+    _K4: npt.NDArray[np.floating]
+    _K6: npt.NDArray[np.floating]
+
+
     _dR: npt.NDArray[np.floating]
     _dK: npt.NDArray[np.floating]
 
     _volume: NPFloat
     _dV: NPFloat
+
+    def __init__(self,
+            size: Sequence[np.floating|float] | npt.NDArray[np.floating],
+            shape: Tuple[int, ...], *,
+            precision: PrecisionStr = 'double',
+            fft_axes: Optional[Tuple[int,...]] = None
+        ):
+        super().__init__(
+            shape,
+            precision=precision, 
+            fft_axes=fft_axes
+        )
+        self._init_coordinate_vars()
+        self.set_size(size)
+
+    @abstractmethod
+    def _update_coordinate_vars(self) -> None:
+        '''
+        Given size, update _R, _K, _dR, _dK
+        '''
 
     @final
     def _init_coordinate_vars(self):
@@ -39,21 +64,14 @@ class Field(Grid[T]):
 
         self._R = np.zeros((self.rank, *self.shape), dtype=dtype)
 
-
         k_shape = list(self.shape)
-        if self._isreal:
+        if self.isreal:
             k_shape[self.last_fft_axis] = k_shape[self.last_fft_axis] // 2 + 1
 
         self._K = np.zeros((self.rank, *k_shape), dtype=dtype)
         self._dR = np.zeros((self.rank,), dtype=dtype)
         self._dK = np.zeros((self.rank,), dtype=dtype)
-
-    @abstractmethod
-    def _update_coordinate_vars(self) -> None:
-        '''
-        Given size, update _R, _K, _dR, _dK
-        '''
-
+    
     def set_size(self, size: SizeLike):
         '''
         Set system size (dimension lengths)
@@ -63,6 +81,10 @@ class Field(Grid[T]):
         self._size[...] = size
 
         self._update_coordinate_vars()
+
+        self._K2 = np.sum(self._K**2, axis=0)
+        self._K4 = self._K2**2
+        self._K6 = self._K2**3
 
         self._volume = np.prod(self._size)
         self._dV = np.prod(self._dR)
@@ -90,6 +112,22 @@ class Field(Grid[T]):
     def k(self):
         'k-space coordinates (frequencies), shape = (rank, d1, d2, ..., dN)'
         return self._K
+
+    @property
+    def k2(self):
+        'k squared, shape = (d1, d2, ..., di/2+1, ... dN)'
+        return self._K2
+
+    @property
+    def k4(self):
+        'k^4, shape = (d1, d2, ..., di/2+1, ..., dN)'
+        return self._K4
+
+    @property
+    def k6(self):
+        'k^6, shape = (d1, d2, ..., di/2+1, ..., dN)'
+        return self._K6
+
 
     @property
     def dr(self):
@@ -125,4 +163,14 @@ class Field(Grid[T]):
 
     @property
     def Volume(self): 'Deprecated'; return self.volume
+
+    def copy(self) -> Self:
+        field1 = self.__class__(
+                self.size, self.shape,
+                precision=self._precision,
+                fft_axes=self._fft_axes
+        )
+        field1.set_psi(self.psi)
+        return field1
+
 

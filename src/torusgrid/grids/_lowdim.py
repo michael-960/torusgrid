@@ -12,7 +12,13 @@ from ._real import RealGrid
 T = TypeVar('T', np.complexfloating, np.floating)
 
 
-class Grid1D(Grid):
+class Grid1D(Grid[T]):
+    def __init__(self,
+            n: int, *,
+            precision: PrecisionStr = 'double'):
+        super().__init__((n,), precision=precision, fft_axes=(0,))
+        ...
+
     @property
     def n(self): return self.shape[0]
 
@@ -24,37 +30,29 @@ class Grid1D(Grid):
         return self.n
 
 
-class ComplexGrid1D(Grid1D, ComplexGrid):
+class ComplexGrid1D(Grid1D[np.complexfloating], ComplexGrid):
     '''
     1D complex grid; fft axis is always axis 0.
     '''
 
-    def __init__(self, 
-            n: int, *,
-            precision: PrecisionStr = 'double'):
 
-        super().__init__(
-            (n,),
-            precision=precision,
-            fft_axes=(0,))
-
-
-class RealGrid1D(Grid1D, RealGrid):
+class RealGrid1D(Grid1D[np.floating], RealGrid):
     '''
     1D real grid; fft axis is always axis 0.
     '''
 
+
+class Grid2D(Grid[T]):
     def __init__(self, 
-            n: int, *,
-            precision: PrecisionStr = 'double'):
+        nx: int, ny: int, *,
+        precision: PrecisionStr = 'double', 
+        fft_axes: Optional[Tuple[int,...]]=None):
 
         super().__init__(
-                (n,),
+                (nx, ny),
                 precision=precision,
-                fft_axes=(0,))
+                fft_axes=fft_axes)
 
-
-class Grid2D(Grid):
     @property
     def nx(self):
         return self.shape[0]
@@ -64,35 +62,15 @@ class Grid2D(Grid):
         return self.shape[1]
 
 
-class ComplexGrid2D(Grid2D, ComplexGrid):
+class ComplexGrid2D(Grid2D[np.complexfloating], ComplexGrid):
     '''
     2D complex grid
     '''
 
-    def __init__(self, 
-            nx: int, ny: int, *,
-            precision: PrecisionStr = 'double', 
-            fft_axes: Optional[Tuple[int,...]]=None
-            ):
-        super().__init__(
-                (nx, ny),
-                precision=precision,
-                fft_axes=fft_axes)
-
-class RealGrid2D(Grid2D, RealGrid):
+class RealGrid2D(Grid2D[np.floating], RealGrid):
     '''
     2D real grid
     '''
-    def __init__(self,
-            nx: int, ny: int, *,
-            precision: PrecisionStr = 'double', 
-            fft_axes: Optional[Tuple[int,...]]=None
-            ):
-        super().__init__(
-                (nx, ny),
-                precision=precision,
-                fft_axes=fft_axes)
-
 
         
 
