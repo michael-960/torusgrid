@@ -5,8 +5,9 @@ import numpy as np
 
 from michael960lib.common import scalarize
 
+from ._1d import ComplexField1D, RealField1D
+from ._2d import ComplexField2D, RealField2D
 
-from ._lowdim import ComplexField2D, RealField2D
 
 @overload
 def load_field(filepath: str) -> RealField2D: ...

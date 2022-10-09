@@ -1,45 +1,14 @@
-from __future__ import annotations
-from typing import Tuple, overload
-from typing_extensions import Self
-
-import numpy as np
-from matplotlib import pyplot as plt
-
-
-from ..grids import ComplexGrid
-from ._complex import ComplexField
-
-from ._real import RealField
 
 
 class ComplexField2D(ComplexField):
-    def __init__(self, Lx: float, Ly: float, Nx: int, Ny: int):
+    def __init__(self,
+            Lx: float, Ly: float,
+            Nx: int, Ny: int
+            ):
         super().__init__((Lx, Ly), (Nx, Ny))
-        self.set_dimensions((Lx, Ly), (Nx, Ny))
 
     def get_dimensions(self):
         return self.Lx, self.Ly, self.Nx, self.Ny
-
-
-    @overload
-    def set_dimensions(self, size, shape): ...
-    @overload
-    def set_dimensions(self, Lx, Ly, Nx, Ny): ...
-
-    def set_dimensions(self, *args):
-        if len(args) == 2:
-            if type(args[0]) is tuple and type(args[1]) is tuple:
-                if len(args[0]) == len(args[1]) == 2:
-                    super().set_dimensions(args[0], args[1])
-                else:
-                    raise ValueError(f'incompatible size/shape for 2D: {args[0]}/{args[1]}')
-            else:
-                raise ValueError(f'invalid size/shape')
-        elif len(args) == 4:
-            super().set_dimensions((args[0], args[1]), (args[2], args[3]))
-        else:
-            raise ValueError
-           
 
     @overload
     def set_size(self, Lx: float, Ly: float): ...

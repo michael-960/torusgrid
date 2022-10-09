@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Sequence, Tuple, Optional
+from typing_extensions import Self
 
 import numpy as np
 import numpy.typing as npt
@@ -31,13 +32,13 @@ class RealField(RealGrid, Field[np.floating]):
         R, K, DR, DK = [], [], [], []
         for i in range(self.rank):
             if i == self.last_fft_axis:
-                x, k, dx, dk = fourier.generate_xk(self.size[i], self.shape[i], real=True)
+                r, k, dr, dk = fourier.generate_xk(self.size[i], self.shape[i], real=True)
             else:
-                x, k, dx, dk = fourier.generate_xk(self.size[i], self.shape[i]) 
+                r, k, dr, dk = fourier.generate_xk(self.size[i], self.shape[i]) 
 
-            R.append(x)
+            R.append(r)
             K.append(k)
-            DR.append(dx)
+            DR.append(dr)
             DK.append(dk)
 
         self._R[...] = np.meshgrid(*R, indexing='ij')
@@ -46,4 +47,13 @@ class RealField(RealGrid, Field[np.floating]):
         self._dK[...] = np.array(DK)
 
 
+    def copy(self) -> Self:
+        field1 = self.__class__(
+                self.size, self.shape,
+                precision=self._precision,
+                fft_axes=self._fft_axes
+        )
+
+        field1.set_psi(self.psi)
+        return field1
 

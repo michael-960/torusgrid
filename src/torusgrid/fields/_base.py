@@ -54,7 +54,6 @@ class Field(Grid[T]):
         Given size, update _R, _K, _dR, _dK
         '''
 
-    @final
     def set_size(self, size: SizeLike):
         '''
         Set system size (dimension lengths)
@@ -83,7 +82,7 @@ class Field(Grid[T]):
     def size(self): return self._size
 
     @property
-    def x(self):
+    def r(self):
         'coordinates, shape = (rank, d1, d2, ..., dN)'
         return self._R
 
@@ -93,7 +92,7 @@ class Field(Grid[T]):
         return self._K
 
     @property
-    def dx(self):
+    def dr(self):
         'coordinate spacings, shape = (rank,)'
         return self._dR
 
@@ -113,13 +112,13 @@ class Field(Grid[T]):
         return self._dV
 
     @property
-    def R(self): 'Deprecated; use self.x instead'; return self.x
+    def R(self): 'Deprecated; use self.r instead'; return self.r
 
     @property
     def K(self): 'Deprecated; use self.k instead'; return self.k
 
     @property
-    def dR(self): 'Deprecated; use self.dx instead'; return self.dx
+    def dR(self): 'Deprecated; use self.dr instead'; return self.dr
 
     @property
     def dK(self): 'Deprecated; use self.dk instead'; return self.dk

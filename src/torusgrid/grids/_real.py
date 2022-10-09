@@ -27,13 +27,13 @@ class RealGrid(Grid[np.floating]):
             precision: PrecisionStr = 'double',
             fft_axes: Optional[Tuple[int,...]] = None
         ):
-        '''Set the resolution (i.e. shape).
+        '''
+        Set the resolution (i.e. shape).
         
         Parameters: shape: tuple of integers (d1, d2, ..., dN),
 
         The last axis in self.fft_axes must be even
         (if not it will be made even automatically)
-
         '''
         self._isreal = True
         self._precision = precision

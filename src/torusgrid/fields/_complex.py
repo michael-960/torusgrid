@@ -14,6 +14,7 @@ from ..grids import ComplexGrid
 from ._base import Field
 
 
+
 class ComplexField(ComplexGrid, Field[np.complexfloating]):
     '''
     A field is a grid with length scales. While the grid shape is fixed for a
@@ -39,10 +40,10 @@ class ComplexField(ComplexGrid, Field[np.complexfloating]):
         
         R, K, DR, DK = [], [], [], []
         for i in range(self.rank):
-            x, k, dx, dk = fourier.generate_xk(self.size[i], self.shape[i]) 
-            R.append(x)
+            r, k, dr, dk = fourier.generate_xk(self.size[i], self.shape[i]) 
+            R.append(r)
             K.append(k)
-            DR.append(dx)
+            DR.append(dr)
             DK.append(dk)
 
         self._R[...] = np.meshgrid(*R, indexing='ij')

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing_extensions import Self
 
-from typing import Tuple, Union, Optional, final
+from typing import Tuple, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -22,6 +22,12 @@ class ComplexGrid(Grid[np.complexfloating]):
             precision: PrecisionStr='double',
             fft_axes: Optional[Tuple[int,...]]=None
         ):
+        '''
+        Set the resolution (i.e. shape).
+        
+        Parameters: shape: tuple of integers (d1, d2, ..., dN),
+        '''
+
     
         self._isreal = False
         self._precision = precision
@@ -34,16 +40,6 @@ class ComplexGrid(Grid[np.complexfloating]):
         else:
             self._fft_axes = fft_axes
 
-    def copy(self) -> Self:
-        '''Generate a new object with the same grid data.
-        '''
-        grid1 = self.__class__(
-                    self.shape,
-                    precision=self._precision,
-                    fft_axes=self._fft_axes
-                )
-        grid1.set_psi(self.psi)
-        return grid1
 
     def set_psi(self, 
             psi1: Union[complex,
@@ -61,6 +57,19 @@ class ComplexGrid(Grid[np.complexfloating]):
                 raise ValueError(f'array has incompatible shape {psi1.shape} with {self.shape}')
 
         self.psi[...] = psi1
+
+    def copy(self) -> Self:
+        '''Generate a new object with the same grid data.
+        '''
+        grid1 = self.__class__(
+                    self.shape,
+                    precision=self._precision,
+                    fft_axes=self._fft_axes
+                )
+        grid1.set_psi(self.psi)
+        return grid1
+
+
 
     # def save(self, fname: str, verbose=False) -> None:
     #     '''Save the grid data into a file.

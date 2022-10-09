@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from typing import Generic, Tuple, TypeVar, Union
+from typing_extensions import Self
 
 import numpy as np
 import numpy.typing as npt
@@ -86,5 +87,14 @@ class Grid(ABC, Generic[T]):
 
     @property
     def psi_k(self): 'k-space data'; return self._psi_k
+
+
+    @abstractmethod
+    def copy(self) -> Self:
+        '''
+        Generate a new object with the same grid data.
+        '''
+
+
 
 
