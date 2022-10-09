@@ -4,10 +4,10 @@ from typing import List, Protocol, TypeVar, final
 
 from torusgrid.dynamics.base import Evolver
 from .temporal import TemporalEvolver
-from ...grids import ComplexGridND
+from ...grids import ComplexGrid
 
 
-T_co = TypeVar('T_co', bound=ComplexGridND, covariant=True)
+T_co = TypeVar('T_co', bound=ComplexGrid, covariant=True)
 
 
 class Step(Protocol):

@@ -1,122 +1,129 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import Generic, Tuple, Type, TypeVar
-import shutil
-from typing_extensions import Self
+from abc import abstractmethod
+from typing import TypeVar, final
 
 import numpy as np
 import numpy.typing as npt
 
-from michael960lib.math import fourier
+from torusgrid.typing.general import NPFloat
 
-from ..misc.typing import generic
-from ..grids import ComplexGridND, RealGridND
+from ..typing import get_real_dtype, SizeLike
 
-
-
-class ComplexFieldND(ComplexGridND):
-    def __init__(self, size: Tuple[float, ...], shape: Tuple[int, ...]):
-        super().__init__(shape)
-        self.set_size(size)
-
-    def set_dimensions(self, size: Tuple[float, ...], shape: Tuple[int, ...]):
-        self.set_resolution(shape)
-        self.set_size(size)
-
-    def set_size(self, size: Tuple[float, ...]):
-        if len(size) != self.rank:
-            raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
-        self.size = size
-        self.Volume = np.prod(size)
-        
-        R, K, DR, DK = [], [], [], []
-
-        for i in range(self.rank):
-            x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i]) 
-            R.append(x)
-            K.append(k)
-            DR.append(dx)
-            DK.append(dk)
-
-        self.R = np.meshgrid(*R, indexing='ij')
-        self.K = np.meshgrid(*K, indexing='ij')
-        self.dR = np.array(DR)
-        self.dK = np.array(DK)
-
-        self.dV = np.prod(self.dR)
-
-    def export_state(self) -> dict:
-        state = {'psi': self.psi.copy(), 'size': self.size}
-        return state
-
-    def copy(self) -> Self:
-        field1 = self.__class__(self.size, self.shape)
-        field1.set_psi(self.psi)
-        return field1
-
-    def save(self, fname: str, verbose=False):
-        tmp_name = f'{fname}.tmp.file'
-        if verbose:
-            self.yell(f'dumping field data to {fname}.field')
-        np.savez(tmp_name, **self.export_state()) 
-        shutil.move(f'{tmp_name}.npz', f'{fname}.field')
+from ..grids import Grid
 
 
 
-class RealFieldND(ComplexFieldND, RealGridND):
-    def __init__(self, size: Tuple[float, ...], shape: Tuple[int, ...]):
-        super().__init__(size, shape)
-        self._isreal = True
+T = TypeVar('T', np.complexfloating, np.floating)
 
-    def set_size(self, size: Tuple[float, ...]):
-        if len(size) != self.rank:
-            raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
-        self.size = size
-        self.Volume = np.prod(size)
-        
-        R, K, DR, DK = [], [], [], []
+class Field(Grid[T]):
+    '''
+    Base class for fields.
+    '''
 
-        for i in range(self.rank):
-            if i == self.rank - 1:
-                x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i], real=True)
-            else:
-                x, k, dx, dk = fourier.generate_xk(size[i], self.shape[i]) 
+    _size: npt.NDArray[np.floating]
 
-            R.append(x)
-            K.append(k)
-            DR.append(dx)
-            DK.append(dk)
+    _R: npt.NDArray[np.floating]
+    _K: npt.NDArray[np.floating]
 
-        self.R = np.meshgrid(*R, indexing='ij')
-        self.K = np.meshgrid(*K, indexing='ij')
-        self.dR = np.array(DR)
-        self.dK = np.array(DK)
+    _dR: npt.NDArray[np.floating]
+    _dK: npt.NDArray[np.floating]
 
-        self.dV = np.prod(self.dR)
+    _volume: NPFloat
+    _dV: NPFloat
+
+    @final
+    def _init_coordinate_vars(self):
+        dtype = get_real_dtype(self._precision)
+
+        self._size = np.zeros((self.rank,), dtype=dtype)
+
+        self._R = np.zeros((self.rank, *self.shape), dtype=dtype)
 
 
+        k_shape = list(self.shape)
+        if self._isreal:
+            k_shape[self.last_fft_axis] = k_shape[self.last_fft_axis] // 2 + 1
 
-T = TypeVar('T', bound=ComplexFieldND)
-
-@generic
-class FreeEnergyFunctional(ABC, Generic[T]):
-    def __init__(self):
-        raise NotImplementedError()
+        self._K = np.zeros((self.rank, *k_shape), dtype=dtype)
+        self._dR = np.zeros((self.rank,), dtype=dtype)
+        self._dK = np.zeros((self.rank,), dtype=dtype)
 
     @abstractmethod
-    def free_energy_density(self, field: T) -> npt.NDArray:
-        raise NotImplementedError()
+    def _update_coordinate_vars(self) -> None:
+        '''
+        Given size, update _R, _K, _dR, _dK
+        '''
 
-    def free_energy(self, field: T) -> float:
-        return np.sum(self.free_energy_density(field)) * field.dV
+    @final
+    def set_size(self, size: SizeLike):
+        '''
+        Set system size (dimension lengths)
+        '''
+        self.validate_size(size)
 
-    @abstractmethod
-    def derivative(self, field: T):
-        raise NotImplementedError()
+        self._size[...] = size
 
-    def mean_free_energy_density(self, field: T) -> float:
-        return np.mean(self.free_energy_density(field))
+        self._update_coordinate_vars()
 
+        self._volume = np.prod(self._size)
+        self._dV = np.prod(self._dR)
 
+    def validate_size(self, size: SizeLike):
+        if isinstance(size, np.ndarray):
+            if size.ndim != 1:
+                raise ValueError(f'ndarray with shape {size.shape} is not a valid field size')
 
+            if not np.isreal(size):
+                raise ValueError(f'ndarray with dtype {size.dtype} is not a valid field size')
+            
+        if len(size) != self.rank:
+            raise ValueError(f'size {size} is incompatible with current shape {self.shape}')
+
+    @property
+    def size(self): return self._size
+
+    @property
+    def x(self):
+        'coordinates, shape = (rank, d1, d2, ..., dN)'
+        return self._R
+
+    @property
+    def k(self):
+        'k-space coordinates (frequencies), shape = (rank, d1, d2, ..., dN)'
+        return self._K
+
+    @property
+    def dx(self):
+        'coordinate spacings, shape = (rank,)'
+        return self._dR
+
+    @property
+    def dk(self):
+        'k-space spacings, shape = (rank,)'
+        return self._dK
+
+    @property
+    def volume(self) -> NPFloat:
+        'real space volume'
+        return self._volume
+
+    @property
+    def dv(self) -> NPFloat:
+        'real space volume element'
+        return self._dV
+
+    @property
+    def R(self): 'Deprecated; use self.x instead'; return self.x
+
+    @property
+    def K(self): 'Deprecated; use self.k instead'; return self.k
+
+    @property
+    def dR(self): 'Deprecated; use self.dx instead'; return self.dx
+
+    @property
+    def dK(self): 'Deprecated; use self.dk instead'; return self.dk
+
+    @property
+    def Volume(self): 'Deprecated'; return self.volume
 

@@ -1,20 +1,35 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
-from typing import Tuple, Union
+from typing import Generic, Tuple, TypeVar, Union
 
 import numpy as np
 import numpy.typing as npt
 import pyfftw
 
+from ..misc.typing import generic
+from ..typing.dtypes import PrecisionStr
 
-class Grid(ABC):
+
+T = TypeVar('T', np.complexfloating, np.floating)
+
+@generic
+class Grid(ABC, Generic[T]):
+    '''
+    Base class for grids.
+    The generic type T refers to the dtype of the wrapped numpy array (self.psi).
+    '''
+    
     _fft: Union[pyfftw.FFTW, None] = None
     _ifft: Union[pyfftw.FFTW, None] = None
 
-    psi: npt.NDArray[np.floating] | npt.NDArray[np.complexfloating]
-    psi_k: npt.NDArray[np.complexfloating]
+    _psi: npt.NDArray[T]
+    _psi_k: npt.NDArray[np.complexfloating]
+
+    _precision: PrecisionStr
     _fft_axes: Tuple[int, ...]
+
+    _isreal: bool
     
     def initialize_fft(self, **fftwargs) -> None:
         '''Initialize the FFTW forward and backward plans. By default the
@@ -27,12 +42,12 @@ class Grid(ABC):
         '''
         psi_tmp = self.psi.copy()
         self._fft = pyfftw.FFTW(
-                self.psi, self.psi_k,
+                self._psi, self._psi_k,
                 direction='FFTW_FORWARD',
                 axes=self._fft_axes, **fftwargs)
 
         self._ifft = pyfftw.FFTW(
-                self.psi_k, self.psi,
+                self._psi_k, self._psi,
                 direction='FFTW_BACKWARD',
                 axes=self._fft_axes, **fftwargs)
 
@@ -50,20 +65,26 @@ class Grid(ABC):
         '''Whether the FFTW plans are initialized.
         '''
         return not (self._fft is None or self._ifft is None)
+
+    @abstractmethod
+    def set_psi(self, psi1: npt.NDArray[T]) -> None: ...
     
     @property
     def shape(self): return self.psi.shape
 
     @property
     def rank(self): return len(self.shape)
+    
+    @property
+    def last_fft_axis(self): return self._fft_axes[-1]
 
-    @abstractmethod
-    def set_psi(
-            self, 
-            psi1: Union[complex,
-                    npt.NDArray[np.complexfloating],
-                    npt.NDArray[np.floating]]
-        ) -> None: ...
+    @property
+    def isreal(self): return self._isreal
 
+    @property
+    def psi(self): 'real space data'; return self._psi
+
+    @property
+    def psi_k(self): 'k-space data'; return self._psi_k
 
 

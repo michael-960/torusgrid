@@ -3,17 +3,17 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Tuple, TypeVar
 
-from ...grids import ComplexGridND
+from ...grids import ComplexGrid
 import numpy.typing as npt
 
 from .temporal import TemporalEvolver
 
 
-T_co = TypeVar('T_co', bound=ComplexGridND, covariant=True)
+T_co = TypeVar('T_co', bound=ComplexGrid, covariant=True)
 
 class SecondOrderRK4(TemporalEvolver[T_co]):
     '''
-    Performs RK4 on a ComplexGridND object to solve a PDE that is
+    Performs RK4 on a ComplexGrid object to solve a PDE that is
     second-order in time
     '''
     def __init__(self, grid: T_co, dt: float):
@@ -70,7 +70,7 @@ class SecondOrderRK4(TemporalEvolver[T_co]):
 
 class FirstOrderRK4(TemporalEvolver[T_co]):
     '''
-    Performs RK4 on a ComplexGridND object to solve a PDE that is
+    Performs RK4 on a ComplexGrid object to solve a PDE that is
     first-order in time
     '''
     def __init__(self, grid: T_co, dt: float):

@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from .fields import ComplexField2D, RealField2D, FieldOperationError
-from .grids import ComplexGridND
+from .grids import ComplexGrid
 
 
 def plot(fields: ComplexField2D|List[ComplexField2D],
@@ -403,7 +403,7 @@ def interface(field_a: ComplexField2D, field_b: ComplexField2D, width: float,
         field1.set_psi(psi1)
         return field1
 
-T = TypeVar('T', bound=ComplexGridND)
+T = TypeVar('T', bound=ComplexGrid)
 
 
 
@@ -411,7 +411,7 @@ T = TypeVar('T', bound=ComplexGridND)
 def liquefy(field: T, psi0=None, *, in_place: Literal[False]=False) -> T: ...
 
 @overload
-def liquefy(field: ComplexGridND, psi0=None, *, in_place: Literal[True]) -> None: ...
+def liquefy(field: ComplexGrid, psi0=None, *, in_place: Literal[True]) -> None: ...
 
 @overload
 def liquefy(field: T, psi0=None, *, in_place: bool=False) -> None|T: ...

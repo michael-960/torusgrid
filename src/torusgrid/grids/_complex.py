@@ -11,8 +11,7 @@ from ..typing import PrecisionStr, get_complex_dtype
 
 from ._base import Grid
 
-
-class ComplexGridND(Grid):
+class ComplexGrid(Grid[np.complexfloating]):
     '''
     A ComplexGridND object is a complex array of shape (d1, d2, .., dN)
     equipped with fourier transform. No length scales are associated with the
@@ -23,22 +22,18 @@ class ComplexGridND(Grid):
             precision: PrecisionStr='double',
             fft_axes: Optional[Tuple[int,...]]=None
         ):
-
-        self.psi: npt.NDArray[np.complexfloating]
-        self.psi_k: npt.NDArray[np.complexfloating]
-
+    
         self._isreal = False
-        self._precision: PrecisionStr = precision
-
-        self.psi = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
-        self.psi_k = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
+        self._precision = precision
+        
+        self._psi = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
+        self._psi_k = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
 
         if fft_axes is None:
             self._fft_axes = tuple(np.arange(self.rank))
         else:
             self._fft_axes = fft_axes
 
-        
     def copy(self) -> Self:
         '''Generate a new object with the same grid data.
         '''
@@ -51,7 +46,7 @@ class ComplexGridND(Grid):
         return grid1
 
     def set_psi(self, 
-            psi1: Union[complex, 
+            psi1: Union[complex,
                         npt.NDArray[np.complexfloating],
                         npt.NDArray[np.floating]]
         ) -> None:
@@ -64,6 +59,7 @@ class ComplexGridND(Grid):
             assert isinstance(psi1, np.ndarray)
             if psi1.shape != self.shape:
                 raise ValueError(f'array has incompatible shape {psi1.shape} with {self.shape}')
+
         self.psi[...] = psi1
 
     # def save(self, fname: str, verbose=False) -> None:
@@ -84,4 +80,3 @@ class ComplexGridND(Grid):
     #     '''
     #     state = {'psi': self.psi.copy()}
     #     return state
-

@@ -13,7 +13,7 @@ from ..typing import get_complex_dtype, get_real_dtype, PrecisionStr
 from ._base import Grid
 
 
-class RealGridND(Grid):
+class RealGrid(Grid[np.floating]):
     '''
     A RealGridND object is a real array of shape (d1, d2, .., dN) equipped
     with fourier transform. No length scales are associated with the grid.
@@ -35,13 +35,8 @@ class RealGridND(Grid):
         (if not it will be made even automatically)
 
         '''
-
-
-        self.psi: npt.NDArray[np.floating]
-        self.psi_k: npt.NDArray[np.complexfloating]
-
         self._isreal = True
-        self._precision: PrecisionStr = precision
+        self._precision = precision
 
         if fft_axes is None:
             self._fft_axes = tuple(np.arange(len(shape)))
@@ -57,15 +52,13 @@ class RealGridND(Grid):
             shape = tuple(shape_list)
 
         shape_k = list(shape)
-
         shape_k[last_axis] = shape_k[last_axis]//2 + 1
-
         shape_k = tuple(shape_k)
 
-        self.psi = pyfftw.zeros_aligned(
+        self._psi = pyfftw.zeros_aligned(
                 shape, dtype=get_real_dtype(self._precision))
 
-        self.psi_k = pyfftw.zeros_aligned(
+        self._psi_k = pyfftw.zeros_aligned(
                 shape_k, dtype=get_complex_dtype(self._precision))
 
     def copy(self) -> Self:

@@ -6,11 +6,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-from ..grids import ComplexGridND
-from ._base import ComplexFieldND, RealFieldND
+from ..grids import ComplexGrid
+from ._complex import ComplexField
+
+from ._real import RealField
 
 
-class ComplexField2D(ComplexFieldND):
+class ComplexField2D(ComplexField):
     def __init__(self, Lx: float, Ly: float, Nx: int, Ny: int):
         super().__init__((Lx, Ly), (Nx, Ny))
         self.set_dimensions((Lx, Ly), (Nx, Ny))
@@ -112,9 +114,9 @@ class ComplexField2D(ComplexFieldND):
             return ax
 
 
-class RealField2D(RealFieldND, ComplexField2D):
+class RealField2D(RealField, ComplexField2D):
     def __init__(self, Lx: float, Ly: float, Nx: int, Ny: int):
-        ComplexGridND.__init__(self, (Nx, Ny))
+        ComplexGrid.__init__(self, (Nx, Ny))
         self.set_dimensions((Lx, Ly), (Nx, Ny))
         self._isreal = True
 
@@ -124,7 +126,7 @@ class RealField2D(RealFieldND, ComplexField2D):
     def set_dimensions(self, Lx: float, Ly: float, Nx: int, Ny: int): ...
 
     def set_dimensions(self, *args):
-        ComplexField2D.set_dimensions(self, *args)
+        ComplexField.set_dimensions(self, *args)
 
     @overload
     def set_size(self, Lx: float, Ly: float): ...
@@ -134,11 +136,11 @@ class RealField2D(RealFieldND, ComplexField2D):
     def set_size(self, arg1, arg2=None):
         if type(arg1) is tuple and arg2 is None:
             if len(arg1) == 2:
-                RealFieldND.set_size(self, arg1)
+                RealField.set_size(self, arg1)
             else:
                 raise ValueError(f'incompatible shape for 2D size: {arg1}')
         else:
-            RealFieldND.set_size(self, (arg1, arg2))
+            RealField.set_size(self, (arg1, arg2))
 
         self.setup_convenience_variables()
 

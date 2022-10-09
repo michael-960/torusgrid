@@ -6,18 +6,18 @@ from matplotlib import pyplot as plt
 
 # from michael960lib.common import overrides
 
-from ._complex import ComplexGridND
-from ._real import RealGridND
+from ._complex import ComplexGrid
+from ._real import RealGrid
 
 
-class ComplexGrid1D(ComplexGridND):
+class ComplexGrid1D(ComplexGrid):
     def __init__(self, N):
         super().__init__((N,))
         self.N = N
 
-class RealGrid1D(RealGridND, ComplexGrid1D):
+class RealGrid1D(RealGrid, ComplexGrid1D):
     def __init__(self, N):
-        ComplexGridND.__init__(self, (N,))
+        ComplexGrid.__init__(self, (N,))
         self.N = N
         self._isreal = True
 
@@ -38,7 +38,7 @@ class RealGrid1D(RealGridND, ComplexGrid1D):
             super().set_resolution((X,))
 
 
-class ComplexGrid2D(ComplexGridND):
+class ComplexGrid2D(ComplexGrid):
     def __init__(self, Nx, Ny):
         super().__init__((Nx, Ny))
         self.Nx = Nx
@@ -73,7 +73,7 @@ class ComplexGrid2D(ComplexGridND):
         plt.show()
 
     
-class RealGrid2D(RealGridND, ComplexGrid2D):
+class RealGrid2D(RealGrid, ComplexGrid2D):
     def __init__(self, Nx, Ny):
         ComplexGridND.__init__(self, (Nx, Ny))
         self.Nx = Nx
