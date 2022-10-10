@@ -25,7 +25,7 @@ class Field1D(Field[T], Grid1D):
     def __init__(
             self, 
             l: FloatLike, n: int, *,
-            precision: PrecisionStr):
+            precision: PrecisionStr = 'double'):
 
         super().__init__(
             (l,), (n,),

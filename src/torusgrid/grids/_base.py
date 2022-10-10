@@ -8,8 +8,9 @@ import numpy as np
 import numpy.typing as npt
 import pyfftw
 
+
 from ..misc.typing import generic
-from ..typing.dtypes import PrecisionStr
+from ..typing import PrecisionStr, FloatLike
 
 
 T = TypeVar('T', np.complexfloating, np.floating)
@@ -77,7 +78,7 @@ class Grid(ABC, Generic[T]):
         return not (self._fft is None or self._ifft is None)
 
     @abstractmethod
-    def set_psi(self, psi1: npt.NDArray[T]) -> None: ...
+    def set_psi(self, psi1: npt.NDArray[T]|FloatLike) -> None: ...
     
     @property
     def shape(self): return self.psi.shape

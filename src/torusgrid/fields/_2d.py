@@ -22,7 +22,7 @@ class Field2D(Field[T], Grid2D):
     def __init__(self, 
             lx: FloatLike, ly: FloatLike,
             nx: int, ny: int, *,
-            precision: PrecisionStr,
+            precision: PrecisionStr = 'double',
             fft_axes: Optional[Tuple[int,...]]=None
             ):
 

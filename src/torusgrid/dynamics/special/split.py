@@ -1,21 +1,22 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import List, Protocol, TypeVar, final
+from typing import List, Protocol, TypeVar, Union, final
 
 from torusgrid.dynamics.base import Evolver
+from torusgrid.typing.general import FloatLike
 from .temporal import TemporalEvolver
-from ...grids import ComplexGrid
+from ...grids import Grid
 
 
-T_co = TypeVar('T_co', bound=ComplexGrid, covariant=True)
+T_co = TypeVar('T_co', bound=Grid, covariant=True)
 
 
 class Step(Protocol):
-    def __call__(self, dt: float) -> None: ...
+    def __call__(self, dt: FloatLike) -> None: ...
 
 
 class SplitStep(TemporalEvolver[T_co]):
-    def __init__(self, grid: T_co, dt: float):
+    def __init__(self, grid: T_co, dt: FloatLike):
         super().__init__(grid, dt)
         self.grid = self.subject
         '''
