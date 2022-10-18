@@ -20,6 +20,3 @@ ComplexLike = Union[NPComplex, complex]
 
 SizeLike = Union[Sequence[FloatLike], npt.NDArray[np.floating], npt.NDArray[np.float_]]
 
-
-
-

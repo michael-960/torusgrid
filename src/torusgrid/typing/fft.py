@@ -1,7 +1,0 @@
-
-
-
-
-from typing import Protocol
-
-
