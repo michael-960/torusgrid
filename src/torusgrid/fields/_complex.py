@@ -30,6 +30,7 @@ class ComplexField(Field[np.complexfloating], ComplexGrid):
             K.append(k)
             DR.append(dr)
             DK.append(dk)
+        
 
         self._R[...] = np.meshgrid(*R, indexing='ij')
         self._K[...] = np.meshgrid(*K, indexing='ij')

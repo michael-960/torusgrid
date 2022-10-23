@@ -4,7 +4,7 @@ from typing import Any, Dict, Type, TypeVar
 
 from .hooks import EvolverHooks, DefaultHooks
 from ..misc import context
-from ..misc.typing import generic
+from ..typing import generic
 
 import threading
 

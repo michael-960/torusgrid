@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Dict, Generic, List, Optional, TypeVar, final
-from ...misc.typing import generic
+from ...typing import generic
 
 if TYPE_CHECKING:
     from ..base import Evolver

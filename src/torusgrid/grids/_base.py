@@ -6,21 +6,20 @@ from typing_extensions import Self
 
 import numpy as np
 import numpy.typing as npt
+
 import pyfftw
-
-
-from ..misc.typing import generic
 from ..typing import PrecisionStr, FloatLike
+from ..typing.generics import generic
 
 
 T = TypeVar('T', np.complexfloating, np.floating)
 
 @generic
 class Grid(ABC, Generic[T]):
-    '''
+    """
     Base class for grids.
     The generic type T refers to the dtype of the wrapped numpy array (self.psi).
-    '''
+    """
     
     _fft: Union[pyfftw.FFTW, None] = None
     _ifft: Union[pyfftw.FFTW, None] = None
@@ -43,14 +42,14 @@ class Grid(ABC, Generic[T]):
     def isreal(self) -> bool: ...
     
     def initialize_fft(self, **fftwargs) -> None:
-        '''Initialize the FFTW forward and backward plans. By default the
+        """Initialize the FFTW forward and backward plans. By default the
         fourier transform plans are not initialized as it can take a
         considerable amount of time.
 
         Parameters:
             **fftwargs: keyword arguments to be passed to pyfftw.FFTW()
 
-        '''
+        """
         psi_tmp = self.psi.copy()
         self._fft = pyfftw.FFTW(
                 self._psi, self._psi_k,
@@ -73,8 +72,9 @@ class Grid(ABC, Generic[T]):
         self._ifft()
     
     def fft_initialized(self) -> bool:
-        '''Whether the FFTW plans are initialized.
-        '''
+        """
+        Whether the FFTW plans are initialized.
+        """
         return not (self._fft is None or self._ifft is None)
 
     @abstractmethod
@@ -85,6 +85,9 @@ class Grid(ABC, Generic[T]):
 
     @property
     def rank(self): return len(self.shape)
+
+    @property
+    def numel(self) -> int: return np.prod(self.shape)
     
     @property
     def last_fft_axis(self): return self._fft_axes[-1]
@@ -96,8 +99,9 @@ class Grid(ABC, Generic[T]):
     def psi_k(self): 'k-space data'; return self._psi_k
 
     def copy(self) -> Self:
-        '''Generate a new object with the same grid data.
-        '''
+        """
+        Generate a new object with the same grid data.
+        """
         grid1 = self.__class__(
                     self.shape,
                     precision=self._precision,

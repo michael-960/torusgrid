@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing_extensions import Self
 
 from typing import Tuple, Union, Optional, final
 
@@ -13,25 +12,26 @@ from ._base import Grid
 
 
 class ComplexGrid(Grid[np.complexfloating]):
-    '''
+    """
     A ComplexGridND object is a complex array of shape (d1, d2, .., dN)
     equipped with fourier transform. No length scales are associated with the
     grid. 
-    '''
+    """
     def __init__(self, 
             shape: Tuple[int, ...], *,
             precision: PrecisionStr='double',
             fft_axes: Optional[Tuple[int,...]]=None
         ):
-        '''
+        """
         Set the resolution (i.e. shape).
         
         Parameters: shape: tuple of integers (d1, d2, ..., dN),
-        '''
+        """
         self._precision = precision
         
         self._psi = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
         self._psi_k = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
+
 
         if fft_axes is None:
             self._fft_axes = tuple(np.arange(self.rank))
@@ -43,11 +43,11 @@ class ComplexGrid(Grid[np.complexfloating]):
                         npt.NDArray[np.complexfloating],
                         npt.NDArray[np.floating]]
         ) -> None:
-        '''Set grid data.
+        """Set grid data.
 
         Parameters: psi1: new grid data, can be either scalar (float) or
         np.ndarray. If a scalar is given, all entries are set to the given value.
-        '''
+        """
         if not np.isscalar(psi1):
             assert isinstance(psi1, np.ndarray)
             if psi1.shape != self.shape:
@@ -58,16 +58,14 @@ class ComplexGrid(Grid[np.complexfloating]):
     @property
     def isreal(self): return False
 
-    
-
 
     # def save(self, fname: str, verbose=False) -> None:
-    #     '''Save the grid data into a file.
+    #     """Save the grid data into a file.
     #
     #     Parameters:
     #         fname: the base file name. A .grid extension will be appended.
     #         verbose: whether to print out details
-    #     '''
+    #     """
     #     tmp_name = f'{fname}.tmp.file'
     #     if verbose:
     #         self.yell(f'dumping profile data to {fname}.grid')
@@ -75,7 +73,7 @@ class ComplexGrid(Grid[np.complexfloating]):
     #     shutil.move(f'{tmp_name}.npz', f'{fname}.grid')
 
     # def export_state(self) -> dict:
-    #     '''Export the grid state to a dictionary
-    #     '''
+    #     """Export the grid state to a dictionary
+    #     """
     #     state = {'psi': self.psi.copy()}
     #     return state
