@@ -18,9 +18,9 @@ if TYPE_CHECKING:
 T = TypeVar('T', np.complexfloating, np.floating)
 
 class Field(Grid[T]):
-    '''
+    """
     Base class for fields.
-    '''
+    """
 
     _size: npt.NDArray[np.floating]
 
@@ -54,9 +54,9 @@ class Field(Grid[T]):
 
     @abstractmethod
     def _update_coordinate_vars(self) -> None:
-        '''
+        """
         Given size, update _R, _K, _dR, _dK
-        '''
+        """
 
     @final
     def _init_coordinate_vars(self):
@@ -75,9 +75,9 @@ class Field(Grid[T]):
         self._dK = np.zeros((self.rank,), dtype=dtype)
     
     def set_size(self, size: SizeLike):
-        '''
+        """
         Set system size (dimension lengths)
-        '''
+        """
         self.validate_size(size)
 
         self._size[...] = size
@@ -96,7 +96,7 @@ class Field(Grid[T]):
             if size.ndim != 1:
                 raise ValueError(f'ndarray with shape {size.shape} is not a valid field size')
 
-            if not np.isreal(size):
+            if not np.all(np.isreal(size)):
                 raise ValueError(f'ndarray with dtype {size.dtype} is not a valid field size')
             
         if len(size) != self.rank:
