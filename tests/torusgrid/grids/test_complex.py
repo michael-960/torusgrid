@@ -1,13 +1,9 @@
 from typing import List, Tuple
 from torusgrid import grids
-import pytest
-
 from scipy.fft import fftn, ifftn
 import numpy as np
-
+import pytest
 import time
-
-
 
 
 shapes: List[Tuple[int,...]] = [
@@ -28,7 +24,7 @@ def test_props(shape: Tuple[int,...]):
     Test grid properties
     """
     rank = len(shape)
-    n_fft_axes = np.random.randint(0, rank+1)
+    n_fft_axes = np.random.randint(1, rank+1)
     fft_axes = tuple(
             np.random.choice(range(rank), size=n_fft_axes, replace=False).tolist()
             )
@@ -64,7 +60,7 @@ def test_fft(shape):
 
     g = grids.ComplexGrid(shape, fft_axes=fft_axes)
     
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TypeError):
         g.fft()
 
     g.initialize_fft()
@@ -96,7 +92,7 @@ def test_copy(shape):
     Test the copy() function
     """
     rank = len(shape)
-    n_fft_axes = np.random.randint(0, rank+1)
+    n_fft_axes = np.random.randint(1, rank+1)
 
     fft_axes = tuple(
             np.random.choice(range(rank), size=n_fft_axes, replace=False).tolist()
@@ -105,6 +101,7 @@ def test_copy(shape):
     g = grids.ComplexGrid(shape, fft_axes=fft_axes)
 
     g.psi[...] = np.random.rand(*shape)
+
     h = g.copy()
 
     assert np.all(g.psi == h.psi)
@@ -128,55 +125,67 @@ def test_copy(shape):
     assert np.all(g.psi == h.psi)
 
 
+@pytest.mark.parametrize(
+        'shape_fft_axes', 
+        [((4,), (0,)), 
+         ((16,), (0,)),
+         ((32,), (0,)), 
+         ((64,), (0,)),
+         ((128,), (0,)),
+         ((512,), (0,)),
+         ((2048,), (0,)),
+         ((4096,), (0,)),
+         ((8192,), (0,)),
+         ((16,16,), (0,1)), ((16,16,), (1,)),
+         ((32,16,), (0,1)), ((32,16,), (0,)),
+         ((64,128,), (0,1)), ((64,128,), (0,)),
+         ((32,256,), (0,1)), ((32,256,), (1,)),
+         ((256,256,), (0,1)), ((256,256,), (1,)),
+         ((512,8,), (1,0)), ((512,8,), (0,)),
+         ((512,64,), (0,1)), ((512,64,), (1,)),
+         ((1024,256,), (0,1)), ((1024,256,), (0,)),
+         ((2048,128,), (0,1)), ((2048,128,), (1,)),
+         ((8,8,32), (0,1,2)), ((8,8,32), (0,2)), ((8,8,32), (2,1)),
+         ((32,64,16), (0,1,2)), ((32,64,16), (1,2)), ((32,64,16), (0,)),
+         ((64,64,64), (0,2,1)), ((64,64,64), (2,0)), ((64,64,64), (2,)),
+         ((256,128,64), (0,1,2)), ((256,128,64), (2,)), ((256,128,64), (2,1,0)), ((256,128,64), (1,0)),
+])
+def test_time(shape_fft_axes: Tuple[Tuple[int,...], Tuple[int,...]]):
 
-@pytest.mark.parametrize('shape', shapes)
-def test_time(shape):
-    """
-    Assert scipy's fft is slower
-    """
-    rank = len(shape)
-    n_fft_axes = np.random.randint(0, rank+1)
-    fft_axes = tuple(
-            np.random.choice(range(rank), size=n_fft_axes, replace=False).tolist()
-            )
-    scale = np.random.rand()*9.9 + 0.1
-
+    shape, fft_axes = shape_fft_axes
     g = grids.ComplexGrid(shape, fft_axes=fft_axes)
 
+    if g.numel > 1e4:
+        g.initialize_fft(threads=4)
+    elif g.numel > 1e3:
+        g.initialize_fft(threads=2)
+    else:
+        g.initialize_fft()
+
+    scale = np.random.rand()*9.9 + 0.1
+    a: np.ndarray = (2*np.random.rand(*shape) - 1) * scale # type: ignore
+    b: np.ndarray = (2*np.random.rand(*shape) - 1) * scale # type: ignore
+    f = a + 1j*b
 
     g.psi[...] = f
 
-    g.initialize_fft()
-
-    N = 100
-
+    N = 512
 
     start = time.time()
     for _ in range(N):
-        fk = fftn(f, axes=fft_axes)
+        fftn(f, axes=fft_axes)
 
     end = time.time()
-    
-    time_scipy = end - start
+
+    t_scipy = end - start
 
 
     start = time.time()
     for _ in range(N):
         g.fft()
-        # fk = g.psi_k
-
     end = time.time()
-    time_tg = end - start
 
-    assert time_tg < time_scipy
-
-
-
-
-
-
-
-
-
-
+    t_tg = end - start
+    
+    assert t_tg < t_scipy
 

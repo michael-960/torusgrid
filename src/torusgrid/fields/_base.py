@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import Optional, Sequence, Tuple, TypeVar, final
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, TypeVar, final
+
 
 import numpy as np
 import numpy.typing as npt
@@ -11,6 +11,8 @@ from ..typing import get_real_dtype, SizeLike, PrecisionStr, NPFloat
 
 from ..grids import Grid
 
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 
 T = TypeVar('T', np.complexfloating, np.floating)

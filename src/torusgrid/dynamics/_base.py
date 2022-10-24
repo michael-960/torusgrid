@@ -13,7 +13,6 @@ from michael960lib.common import deprecated
 
 from ..fields import ComplexField2D
 # from ..grids import StateFunction, ComplexGridND
-from ..grids import ComplexGridND
 
 from ..callbacks import EvolverCallBack
 

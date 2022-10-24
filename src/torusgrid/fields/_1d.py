@@ -1,23 +1,21 @@
 from __future__ import annotations
-from abc import abstractmethod
 
-from typing import Tuple, TypeVar, overload
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Tuple, TypeVar, overload
 
 import numpy as np
 import numpy.typing as npt
 
-from matplotlib import pyplot as plt
-
 from ..typing.dtypes import PrecisionStr
 from ..typing import FloatLike
 
-
-from ..grids import ComplexGrid, Grid1D, Grid2D
+from ..grids import Grid1D
 from ._complex import ComplexField
 
 from ._real import RealField
 from ._base import Field
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 T = TypeVar('T', np.complexfloating, np.floating)
 

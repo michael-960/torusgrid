@@ -1,8 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 
-from typing import Generic, Optional, Tuple, TypeVar, Union
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Generic, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -11,6 +10,9 @@ import pyfftw
 from ..typing import PrecisionStr, FloatLike
 from ..typing.generics import generic
 
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 T = TypeVar('T', np.complexfloating, np.floating)
 
@@ -64,12 +66,12 @@ class Grid(ABC, Generic[T]):
         self.set_psi(psi_tmp)
 
     def fft(self):
-        if self._fft is None: raise RuntimeError('FFT is not initialized')
-        self._fft()
+        # if self._fft is None: raise RuntimeError('FFT is not initialized')
+        self._fft() # type: ignore
 
     def ifft(self):
-        if self._ifft is None: raise RuntimeError('IFFT is not initialized')
-        self._ifft()
+        # if self._ifft is None: raise RuntimeError('IFFT is not initialized')
+        self._ifft() # type: ignore
     
     def fft_initialized(self) -> bool:
         """

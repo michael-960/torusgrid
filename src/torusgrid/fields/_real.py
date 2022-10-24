@@ -1,17 +1,11 @@
 from __future__ import annotations
-from typing import Sequence, Tuple, Optional
-from typing_extensions import Self
 
 import numpy as np
 import numpy.typing as npt
 
 from michael960lib.math import fourier
-from torusgrid.typing.dtypes import PrecisionStr
 
 from ..grids import RealGrid
-
-from ..typing import SizeLike
-
 from ._base import Field
 
 
