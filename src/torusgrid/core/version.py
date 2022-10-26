@@ -1,2 +1,3 @@
+from importlib.metadata import version
 
-__version__ = '0.4.0'
+__version__ = version('torusgrid')
