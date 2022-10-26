@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Tuple, TypeVar, overload
 import numpy as np
 import numpy.typing as npt
 
-from ..typing.dtypes import PrecisionStr
-from ..typing import FloatLike
+from ..core import PrecisionLike, FloatLike
 
 from ..grids import Grid1D
 from ._complex import ComplexField
@@ -62,28 +61,30 @@ class Field1D(Field[T], Grid1D):
 
     def set_size(self, x: Tuple[FloatLike]|FloatLike, /):
         if isinstance(x, tuple): 
-            super().set_size(x)
+            Field[T].set_size(self, x)
 
         else:
-            super().set_size((x,))
+            Field[T].set_size(self, (x,))
 
     def copy(self) -> Self:
         f = self.__class__(
                 self.l, self.n,
                 precision=self._precision
             )
+
+        f.psi[...] = self.psi
         return f
 
 
-class ComplexField1D(Field1D[np.complexfloating], ComplexField):
-    '''
+#class ComplexField1D(Field1D[np.complexfloating], ComplexField):
+class ComplexField1D(ComplexField, Field1D[np.complexfloating]):
+    """
     1D complex field
-    '''
+    """
 
-
-class RealField1D(Field1D[np.floating], RealField):
-    '''
+# class RealField1D(Field1D[np.floating], RealField):
+class RealField1D(RealField, Field1D[np.floating]):
+    """
     1D real field
-    '''
-
+    """
 

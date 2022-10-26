@@ -2,18 +2,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple, TypeVar, final
 
-
 import numpy as np
 import numpy.typing as npt
 
-
-from ..typing import get_real_dtype, SizeLike, PrecisionStr, NPFloat
+from ..core import get_real_dtype, PrecisionStr, NPFloat, SizeLike
 
 from ..grids import Grid
 
 if TYPE_CHECKING:
     from typing_extensions import Self
-
 
 T = TypeVar('T', np.complexfloating, np.floating)
 
@@ -21,18 +18,14 @@ class Field(Grid[T]):
     """
     Base class for fields.
     """
-
     _size: npt.NDArray[np.floating]
-
     _R: npt.NDArray[np.floating]
-    _K: npt.NDArray[np.floating]
+    _dR: npt.NDArray[np.floating]
 
+    _K: npt.NDArray[np.floating]
     _K2: npt.NDArray[np.floating]
     _K4: npt.NDArray[np.floating]
     _K6: npt.NDArray[np.floating]
-
-
-    _dR: npt.NDArray[np.floating]
     _dK: npt.NDArray[np.floating]
 
     _volume: NPFloat
@@ -44,8 +37,10 @@ class Field(Grid[T]):
             precision: PrecisionStr = 'double',
             fft_axes: Optional[Tuple[int,...]] = None
         ):
-        super().__init__(
-            shape,
+
+        "call Grid contructor"
+        Grid[T].__init__(
+            self, shape,
             precision=precision, 
             fft_axes=fft_axes
         )
@@ -60,28 +55,24 @@ class Field(Grid[T]):
 
     @final
     def _init_coordinate_vars(self):
+        """
+        Called by the Field constructure to initialize _size, _R, _K, _dR, _dK
+        arrays to ZEROS
+        """
         dtype = get_real_dtype(self._precision)
-
         self._size = np.zeros((self.rank,), dtype=dtype)
-
         self._R = np.zeros((self.rank, *self.shape), dtype=dtype)
-
-        k_shape = list(self.shape)
-        if self.isreal:
-            k_shape[self.last_fft_axis] = k_shape[self.last_fft_axis] // 2 + 1
-
-        self._K = np.zeros((self.rank, *k_shape), dtype=dtype)
+        self._K = np.zeros((self.rank, *self.shape_k), dtype=dtype)
         self._dR = np.zeros((self.rank,), dtype=dtype)
         self._dK = np.zeros((self.rank,), dtype=dtype)
     
     def set_size(self, size: SizeLike):
         """
-        Set system size (dimension lengths)
+        Set system size (dimension lengths) and update size, r, k, dr, dk etc
         """
         self.validate_size(size)
 
         self._size[...] = size
-
         self._update_coordinate_vars()
 
         self._K2 = np.sum(self._K**2, axis=0)
@@ -130,7 +121,6 @@ class Field(Grid[T]):
         'k^6, shape = (d1, d2, ..., di/2+1, ..., dN)'
         return self._K6
 
-
     @property
     def dr(self):
         'coordinate spacings, shape = (rank,)'
@@ -164,7 +154,7 @@ class Field(Grid[T]):
     def dK(self): 'Deprecated; use self.dk instead'; return self.dk
 
     @property
-    def Volume(self): 'Deprecated'; return self.volume
+    def Volume(self): 'Deprecated; use self.volume instead'; return self.volume
 
     def copy(self) -> Self:
         field1 = self.__class__(
@@ -172,7 +162,7 @@ class Field(Grid[T]):
                 precision=self._precision,
                 fft_axes=self._fft_axes
         )
-        field1.set_psi(self.psi)
+        field1.psi[...] = self.psi
         return field1
 
 

@@ -1,11 +1,12 @@
+raise ImportError('the history module is currently not maintained')
 
 from michael960lib.common import IllegalActionError, ModifyingReadOnlyObjectError
 
 
 class EvolverHistory:
-    '''
+    """
     A history object
-    '''
+    """
     def __init__(self):
         self.evolver_states = []
         self.state_functions = []

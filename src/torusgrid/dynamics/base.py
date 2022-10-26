@@ -4,7 +4,8 @@ from typing import Any, Dict, Type, TypeVar
 
 from .hooks import EvolverHooks, DefaultHooks
 from ..misc import context
-from ..typing import generic
+
+from ..core import generic
 
 import threading
 
@@ -151,5 +152,7 @@ class Evolver(ABC, Generic[T]):
             if self._lock.locked():
                 self._lock.release()
             self.thread.join()
+
+
 
 

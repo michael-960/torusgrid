@@ -26,11 +26,10 @@ class ComplexGridNPZ:
             psi = dat['psi']
             shape = psi.shape
             grid = ComplexGrid(shape)
-            grid.set_psi(psi)
+            grid.psi[...] = psi
         return grid
 
     @staticmethod
     def write(path: str, data: ComplexGrid, **kwargs) -> None:
         with open(path, 'wb') as f:
             np.savez(f, psi=data.psi)
-

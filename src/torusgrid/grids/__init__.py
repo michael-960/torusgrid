@@ -8,10 +8,7 @@ from ._base import Grid
 from ._complex import ComplexGrid
 from ._real import RealGrid
 
-from ._lowdim import ComplexGrid1D, ComplexGrid2D, RealGrid1D, RealGrid2D, Grid1D, Grid2D
-
-from ._util import load_grid, import_grid
-
+from ._1d import ComplexGrid1D, RealGrid1D, Grid1D
+from ._2d import ComplexGrid2D, RealGrid2D, Grid2D
 
 
-# deprecated

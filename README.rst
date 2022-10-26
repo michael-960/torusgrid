@@ -1,7 +1,7 @@
 
 torusgrid
 ############
-:code:`torusgrid` is a package based on numpy arrays and pyfftw that facilitates field simulations.
+:code:`torusgrid` is a package based on pyfftw that facilitates (periodic) field simulations.
 
 
 Modules

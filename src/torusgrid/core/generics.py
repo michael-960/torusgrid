@@ -3,13 +3,18 @@ from typing import TYPE_CHECKING, TypeVar, Type, Generic
 T = TypeVar('T')
 
 if TYPE_CHECKING:
-    def generic(cls: Type[T]) -> Type[T]: return cls
-else: 
-    def generic(cls: type) -> type:
-        '''
+    def generic(cls: Type[T]) -> Type[T]: 
+        """
         Remove generic class inheritance and add trivial subscript
         such that A[T] = A.
-        '''
+        """
+        return cls
+else: 
+    def generic(cls: type) -> type:
+        """
+        Remove generic class inheritance and add trivial subscript
+        such that A[T] = A.
+        """
 
         cls_ = add_trivial_subscript(remove_generic_base(cls))
         
@@ -17,9 +22,9 @@ else:
 
 
 def remove_generic_base(cls: type) -> type:
-    '''
-    Remove the Generic base
-    '''
+    """
+    Remove Generic[T] base
+    """
     metatype = type(cls)
     
     old_bases = cls.__bases__
@@ -40,14 +45,13 @@ def remove_generic_base(cls: type) -> type:
 
 
 def add_trivial_subscript(cls: type) -> type:
-    '''
+    """
     Add trivial class subscript
-    '''
-    class cls_(cls):
+    """
+    class cls_(cls): # type: ignore
         def __class_getitem__(cls, _):
             return cls
     cls_.__name__ = cls.__name__
     cls_.__qualname__ = cls.__qualname__
     return cls_
-
 

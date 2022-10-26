@@ -1,26 +1,23 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, cast
 import numpy as np
-
 from ..fields import RealField2D
-
-from michael960lib.common import scalarize
-
-if TYPE_CHECKING:
-    from zlug.file.proxies import ObjectProxy
+from .. import core
 
 
 class RealField2DNPZ:
+    """
+    RealField2D to NPZ
+    """
     @staticmethod
     def read(path: str, **kwargs) -> RealField2D:
         with open(path, 'rb') as f:
-            dat = np.load(f, allow_pickle=False)
+            dat = np.load(f, allow_pickle=False, **kwargs)
 
             state = dict()
             for key in dat.files:
                 state[key] = dat[key]
 
-            state = cast(Dict, scalarize(state))
+            state = core.scalarize(state)
 
             psi = state['psi']
             Lx = state['Lx']
@@ -29,7 +26,7 @@ class RealField2DNPZ:
             Ny = psi.shape[1]
 
             field = RealField2D(Lx, Ly, Nx, Ny)
-            field.set_psi(psi)
+            field.psi[...] = psi
         return field
 
     @staticmethod
@@ -38,9 +35,7 @@ class RealField2DNPZ:
         with open(path, 'wb') as f:
             np.savez(f,
                 psi=data.psi.copy(),
-                Lx=data.Lx,
-                Ly=data.Ly
+                Lx=data.lx,
+                Ly=data.ly, **kwargs
             )
-
-
 

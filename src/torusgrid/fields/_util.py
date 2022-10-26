@@ -1,11 +1,11 @@
+raise ImportError('Module is outdated and deprecated')
 from __future__ import annotations
-from typing import List, Literal, Tuple, overload
+from typing import Literal, overload
 
 import numpy as np
 
-from michael960lib.common import scalarize
+from ..core import scalarize
 
-from ._1d import ComplexField1D, RealField1D
 from ._2d import ComplexField2D, RealField2D
 
 

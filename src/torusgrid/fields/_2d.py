@@ -1,20 +1,15 @@
 from __future__ import annotations
-
 from typing import Tuple, TypeVar, overload, Optional
-
+from typing_extensions import Self
 import numpy as np
 import numpy.typing as npt
 
-
-from ..typing.dtypes import PrecisionStr
-from ..typing import FloatLike
-
+from ..core import PrecisionStr, FloatLike
 
 from ..grids import Grid2D
 from ._complex import ComplexField
 from ._real import RealField
 from ._base import Field
-
 
 T = TypeVar('T', np.complexfloating, np.floating)
 
@@ -90,21 +85,31 @@ class Field2D(Field[T], Grid2D):
 
         if isinstance(x1, tuple): 
             assert x2 is None
-            super().set_size(x1)
+            Field[T].set_size(self, x1)
         else:
             assert x2 is not None
-            super().set_size((x1, x2))
+            Field[T].set_size(self, (x1, x2))
+
+    def copy(self) -> Self:
+        f = self.__class__(
+                self.lx, self.ly, 
+                self.nx, self.ny,
+                fft_axes=self.fft_axes,
+                precision=self._precision
+            )
+
+        f.psi[...] = self.psi
+        return f
 
 
 class ComplexField2D(Field2D[np.complexfloating], ComplexField):
-    '''
+    """
     2D complex field
-    '''
+    """
 
 
 class RealField2D(Field2D[np.floating], RealField):
-    '''
+    """
     2D real field
-    '''
-
+    """
 

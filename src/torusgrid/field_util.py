@@ -4,7 +4,7 @@ from typing import Any, List, Literal, Tuple, TypeVar, Union, overload, Optional
 import numpy as np
 from matplotlib import pyplot as plt
 
-from .fields import ComplexField2D, RealField2D, FieldOperationError
+from .fields import ComplexField2D, RealField2D
 from .grids import ComplexGrid
 
 
@@ -431,4 +431,12 @@ def liquefy(
         field1 = field.copy()
         field1.set_psi(psi0)
         return field1
+
+
+
+class FieldOperationError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
 

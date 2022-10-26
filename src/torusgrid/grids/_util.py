@@ -1,3 +1,4 @@
+raise ImportError('Module is outdated and deprecated')
 import numpy as np
 from ._complex import ComplexGrid
 from ._real import RealGrid

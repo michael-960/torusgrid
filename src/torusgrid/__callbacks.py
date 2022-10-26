@@ -1,3 +1,5 @@
+raise ImportError('torusgrid.callbacks is deprecated. Use torusgrid.dynamics.hooks instead')
+
 from __future__ import annotations
 from enum import Enum
 
@@ -5,8 +7,7 @@ import numpy as np
 
 from michael960lib.common import overrides, IllegalActionError, ModifyingReadOnlyObjectError
 
-
-# deprecated: use hooks instead
+import warnings
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

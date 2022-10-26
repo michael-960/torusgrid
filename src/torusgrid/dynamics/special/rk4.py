@@ -1,24 +1,23 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Tuple, TypeVar
+from typing import Tuple, TypeVar
 
-from torusgrid.typing.general import FloatLike
-
+from ...core import FloatLike
 from ...grids import Grid
 import numpy.typing as npt
 
 from .temporal import TemporalEvolver
 
 
-T_co = TypeVar('T_co', bound=Grid, covariant=True)
+T = TypeVar('T', bound=Grid)
 
-class SecondOrderRK4(TemporalEvolver[T_co]):
+class SecondOrderRK4(TemporalEvolver[T]):
     '''
     Performs RK4 on a ComplexGrid object to solve a PDE that is
     second-order in time
     '''
-    def __init__(self, grid: T_co, dt: FloatLike):
+    def __init__(self, grid: T, dt: FloatLike):
         super().__init__(grid, dt)
     
         self.grid = self.subject
@@ -70,12 +69,12 @@ class SecondOrderRK4(TemporalEvolver[T_co]):
 
 
 
-class FirstOrderRK4(TemporalEvolver[T_co]):
+class FirstOrderRK4(TemporalEvolver[T]):
     '''
     Performs RK4 on a ComplexGrid object to solve a PDE that is
     first-order in time
     '''
-    def __init__(self, grid: T_co, dt: float):
+    def __init__(self, grid: T, dt: float):
         super().__init__(grid, dt)
     
         self.grid = self.subject
