@@ -1,87 +1,88 @@
 from __future__ import annotations
+from functools import partial
 import pytest
+from torusgrid.core.dtypes import FloatingPointPrecision, PrecisionLike, PrecisionStr
 from torusgrid.fields import ComplexField1D, RealField1D
 from scipy.fft import fft, ifft, rfft, irfft
 import numpy as np
 
 import torusgrid.misc.testutils as T
 
-
-NUM_SHAPES = 200
-NUM_FFT_OPERATIONS = 128
-NUM_FFT_THREADS = 8
-
-NUM_SETSIZE_TRIALS = 8
-
-FFT_RTOL = 1e-10
-FFT_ATOL_FACTOR = 1e-8
-
-MAX_OFFSET = 0
-MIN_OFFSET = -1
-
-MAX_SCALE = 1e9
-MIN_SCALE = 1e-9
-
-MIN_NUMEL = 1
-MAX_NUMEL = 1e5
-
-MIN_SIZE = 1e-8
-MAX_SIZE = 1e8
-
-
-TOL = dict(rtol=FFT_RTOL, atol_factor=FFT_ATOL_FACTOR)
+_cfg = T.get_config()
+config = _cfg['fields']['1d']
+gconfig = _cfg['global']
 ARRAY_GEN_CFG = dict(
-    min_offset=MIN_OFFSET, max_offset=MAX_OFFSET,
-    min_scale=MIN_SCALE, max_scale=MAX_SCALE
+    min_offset=config['min_offset'], max_offset=config['max_offset'],
+    min_scale=config['min_scale'], max_scale=config['max_scale']
 )
+
+def get_fft_tol(p: PrecisionLike):
+    return dict(
+            rtol1=T.floating_tol(p, cfg=gconfig['fft_tol']),
+            rtol2=T.floating_tol(p, cfg=gconfig['fft_tol']))
+
+def get_tol(p: PrecisionLike):
+    return dict(
+            rtol1=T.floating_tol(p, cfg=gconfig['floating_tol']),
+            rtol2=T.floating_tol(p, cfg=gconfig['floating_tol']))
 
 
 isreal = ['real', 'complex']
 
-shapes = T.gen_shapes(NUM_SHAPES, ranks=[1], 
-                      min_log_numel=np.log(MIN_NUMEL),
-                      max_log_numel=np.log(MAX_NUMEL))
+shapes = T.gen_shapes(config['num_samples'], ranks=[1], 
+                      min_numel=config['min_numel'],
+                      max_numel=config['max_numel'])
 
-sizes = [T.gen_random_sequence(1, MIN_SIZE, MAX_SIZE) for _ in shapes]
+sizes = [T.gen_random_sequence(1, config['min_vol'], config['max_vol']) for _ in shapes]
 
 
 ns = [shape[0] for shape in shapes]
 ls = [size[0] for size in sizes]
 
-_test_ids = [f'l={l:.4f} n={n}'
-             for l,n in zip(ls,ns)]
+reals = [['real', 'complex'][np.random.randint(0,2)] for _ in shapes]
 
-def parametrize(f):
-    return pytest.mark.parametrize(['l', 'n'], zip(ls, ns), ids=_test_ids)(f)
+precisions = [['single', 'double', 'longdouble'][np.random.randint(0,3)] for _ in shapes]
+
+argvals = dict(l=ls, n=ns, real_=reals, precision=precisions)
 
 
 class TestField1D:
     """
     Test 1D complex and real fields functionalites
     """
-    @pytest.mark.parametrize('real_', isreal)
-    @parametrize
-    def test_props(self, l: float, n: int, real_: str):
+    @T.parametrize('l', 'n', 'real_', 'precision', argvals=argvals)
+    def test_props(self, l, n: int, real_: str, precision: PrecisionStr):
+
+        if T.will_overflow((l,), (n,), precision):
+            pytest.skip(msg='float overflow')
+
         real = real_ == 'real'
+        dtype = T.real_dtype(precision)
+
+        l = dtype(l)
+
         if not real:
-            g = ComplexField1D(l, n)
+            g = ComplexField1D(l, n, precision=precision)
             nk = n
         else:
             if n % 2 == 1:
                 with pytest.warns(UserWarning):
-                    g = RealField1D(l, n)
+                    g = RealField1D(l, n, precision=precision)
                     assert g.n == n+1
                     n += 1
             else:
-                g = RealField1D(l, n)
+                g = RealField1D(l, n, precision=precision)
             nk = n//2 + 1
+
+        tol = get_tol(g.precision)
+        dtype = T.real_dtype(precision)
 
         assert g.n == n
         assert g.shape == (n,)
         assert g.rank == 1
         assert g.last_fft_axis == 0
         assert g.fft_axes == (0,)
-        assert g.precision == 'DOUBLE'
+        assert g.precision is FloatingPointPrecision.cast(precision)
         assert g.shape_k == (nk,)
 
         assert g._fft is None
@@ -89,34 +90,37 @@ class TestField1D:
 
         assert g.l == l
         assert len(g.size) == 1
-        assert T.adaptive_atol_allclose(g.size, l, **TOL) # type: ignore
+        assert T.adaptive_allclose(g.size, l, **tol) # type: ignore
 
-        assert T.adaptive_atol_allclose(g.r, np.linspace(0, l, n+1)[:-1], **TOL)
-        dk = np.pi*2 / l
+        assert T.adaptive_allclose(g.r, np.linspace(0, l, n+1, dtype=dtype)[:-1], **tol)
+        dk = np.pi*2 / dtype(l)
 
         if real:
             k = np.array([dk*i for i in range(nk)])
         else:
             k = np.array([dk*i for i in range(nk//2)] + [dk*i for i in range(-(n-nk//2), 0)])
 
-        assert T.adaptive_atol_allclose(g.k, k, **TOL)
-        assert T.adaptive_atol_allclose(g.k2, k**2, **TOL)
-        assert T.adaptive_atol_allclose(g.k4, k**4, **TOL)
-        assert T.adaptive_atol_allclose(g.k6, k**6, **TOL)
+        assert T.adaptive_allclose(g.k, k, **tol)
+        assert T.adaptive_allclose(g.k2, k**2, **tol)
+        assert T.adaptive_allclose(g.k4, k**4, **tol)
 
 
-    @pytest.mark.parametrize('real_', isreal)
-    @parametrize
-    def test_copy(self, l: float, n: int, real_: bool):
+    @T.parametrize('l', 'n', 'real_', 'precision', argvals=argvals)
+    def test_copy(self, l: float, n: int, real_: bool, precision: PrecisionStr):
+
+        if T.will_overflow((l,), (n,), precision):
+            pytest.skip(msg='float overflow')
 
         real = real_ == 'real'
         if not real:
-            g = ComplexField1D(l, n)
+            g = ComplexField1D(l, n, precision=precision)
         else:
             if n%2 == 1: n += 1
-            g = RealField1D(l, n)
+            g = RealField1D(l, n, precision=precision)
 
-        g.psi[...] = T.gen_array((n,), **ARRAY_GEN_CFG, complex=(not real))
+        tol = get_tol(g.precision)
+
+        g.psi[...] = T.gen_array((n,), **ARRAY_GEN_CFG, complex=(not real), precision=precision)
 
         h = g.copy()
 
@@ -126,85 +130,77 @@ class TestField1D:
         assert np.array_equal(h.psi, g.psi)
         assert np.array_equal(h.psi_k, g.psi_k)
 
-        assert g.shape == h.shape
-        assert g.rank == h.rank
         assert g.n == h.n
-
         assert g.l == h.l
 
-        assert g.shape_k == h.shape_k
-        assert g.last_fft_axis == h.last_fft_axis
-        assert g.fft_axes == h.fft_axes
-        assert g.numel == h.numel
-        assert g.isreal == h.isreal
-        assert g.precision == h.precision
-
-        assert np.array_equal(g.r, h.r)
-        assert np.array_equal(g.k, h.k)
-        assert np.array_equal(g.k2, h.k2)
-        assert np.array_equal(g.k4, h.k4)
-        assert np.array_equal(g.k6, h.k6)
-
-        assert np.array_equal(g.size, h.size)
-        assert g.volume == h.volume
-        assert np.array_equal(g.dr, h.dr)
-        assert np.array_equal(g.dk, h.dk)
-
-        assert g.dv == h.dv
+        assert T.same_meta(g, h, **tol)
 
 
-    @pytest.mark.parametrize('real_', isreal)
-    @parametrize
-    def test_set_size(self, l: float, n: int, real_: bool):
+    @T.parametrize('l', 'n', 'real_', 'precision', argvals=argvals)
+    def test_set_size(self, l: float, n: int, real_: bool, precision: PrecisionStr):
+
+        if T.will_overflow((l,), (n,), precision):
+            pytest.skip(msg='float overflow')
+
         real = real_ == 'real'
         if not real:
-            g = ComplexField1D(l, n)
+            g = ComplexField1D(l, n, precision=precision)
         else:
             if n%2 == 1: n += 1
-            g = RealField1D(l, n)
+            g = RealField1D(l, n, precision=precision)
 
-        for _ in range(NUM_SETSIZE_TRIALS):
-            l_ = T.gen_random_sequence(1, min_prod=MIN_SIZE, max_prod=MAX_SIZE)[0]
+        tol = get_tol(g.precision)
+        dtype = T.real_dtype(precision)
+
+        for _ in range(config['num_setsize_trials']):
+            l_ = T.gen_random_sequence(1, min_prod=config['min_vol'], max_prod=config['max_vol'])[0]
+            l_ = dtype(l_)
+
+            if T.will_overflow((l_,), (n,), precision): continue
 
             if np.random.rand() < 0.5:
                 g.set_size(l_)
             else:
                 g.set_size((l_,))
 
-            assert T.adaptive_atol_allclose(g.size, l_, **TOL) # type: ignore
-            assert T.adaptive_atol_allclose(g.r, np.linspace(0, l_, n+1)[:-1], **TOL)
+            assert T.adaptive_allclose(g.size, l_, **tol) # type: ignore
+            assert T.adaptive_allclose(g.r, np.linspace(0, l_, n+1)[:-1], **tol)
 
-            dk = np.pi*2 / l_
+            dk = np.pi*2 / dtype(l_)
 
             if real:
                 k = np.array([dk*i for i in range(n//2+1)])
             else:
                 k = np.array([dk*i for i in range(n//2)] + [dk*i for i in range(-(n-n//2), 0)])
 
-            assert T.adaptive_atol_allclose(g.k, k, **TOL)
-            assert T.adaptive_atol_allclose(g.k2, k**2, **TOL)
-            assert T.adaptive_atol_allclose(g.k4, k**4, **TOL)
-            assert T.adaptive_atol_allclose(g.k6, k**6, **TOL)
+            assert T.adaptive_allclose(g.k, k, **tol)
+            assert T.adaptive_allclose(g.k2, k**2, **tol)
+            assert T.adaptive_allclose(g.k4, k**4, **tol)
 
 
     @pytest.mark.slow
-    @pytest.mark.parametrize('real_', isreal)
-    @parametrize
-    def test_fft(self, l: float, n: int, real_: bool):
+    @T.parametrize('l', 'n', 'real_', 'precision', argvals=argvals)
+    def test_fft(self, l: float, n: int, real_: bool, precision: PrecisionStr):
+
+        if T.will_overflow((l,), (n,), precision):
+            pytest.skip(msg='float overflow')
+
         real = real_ == 'real'
         if not real:
-            g = ComplexField1D(l, n)
+            g = ComplexField1D(l, n, precision=precision)
         else:
             if n%2 == 1: n += 1
-            g = RealField1D(l, n)
+            g = RealField1D(l, n, precision=precision)
+
+        tol = get_fft_tol(g.precision)
 
         with pytest.raises(TypeError):
             g.fft()
 
-        g.initialize_fft(threads=NUM_FFT_THREADS)
+        g.initialize_fft(threads=config['num_fft_threads'])
 
-        for _ in range(NUM_FFT_OPERATIONS):
-            f = T.gen_array((n,), **ARRAY_GEN_CFG, complex=(not real))
+        for _ in range(config['num_fft_trials']):
+            f = T.gen_array((n,), **ARRAY_GEN_CFG, complex=(not real), precision=precision)
 
             g.psi[...] = f
             assert np.array_equal(g.psi, f)
@@ -213,25 +209,25 @@ class TestField1D:
             
             if real:
                 fk_r = rfft(f)
-                assert T.adaptive_atol_allclose(g.psi_k, fk_r, **TOL) # type: ignore
+                assert T.adaptive_allclose(g.psi_k, fk_r, **tol) # type: ignore
             else:
-                assert T.adaptive_atol_allclose(g.psi_k, fk, **TOL) # type: ignore
+                assert T.adaptive_allclose(g.psi_k, fk, **tol) # type: ignore
 
             g.ifft()
             f = ifft(fk)
 
             if real:
                 f_r = irfft(fk_r) # type: ignore
-                assert T.adaptive_atol_allclose(g.psi, f_r, **TOL) # type: ignore
+                assert T.adaptive_allclose(g.psi, f_r, **tol) # type: ignore
 
-            assert T.adaptive_atol_allclose(g.psi, f, **TOL) # type: ignore
+            assert T.adaptive_allclose(g.psi, f, **tol) # type: ignore
 
             """
             Finally, to make sure that T.adaptive_atol_allclose is working as
             intended
             """
-            assert not T.adaptive_atol_allclose(
+            assert not T.adaptive_allclose(
                     g.psi, 
-                    T.gen_array(g.shape, MIN_OFFSET, MAX_OFFSET, MIN_SCALE, MAX_SCALE),
-                    **TOL)
+                    T.gen_array(g.shape, **ARRAY_GEN_CFG, precision=precision),
+                    **tol)
 

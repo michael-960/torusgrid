@@ -1,11 +1,12 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, TypeVar, final
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, TypeVar, final, overload
 
 import numpy as np
 import numpy.typing as npt
 
-from ..core import get_real_dtype, PrecisionStr, NPFloat, SizeLike
+
+from ..core import get_real_dtype, PrecisionLike, NPFloat, SizeLike, IntLike
 
 from ..grids import Grid
 
@@ -31,12 +32,14 @@ class Field(Grid[T]):
     _volume: NPFloat
     _dV: NPFloat
 
+
     def __init__(self,
-            size: Sequence[np.floating|float] | npt.NDArray[np.floating],
-            shape: Tuple[int, ...], *,
-            precision: PrecisionStr = 'double',
-            fft_axes: Optional[Tuple[int,...]] = None
+            size: SizeLike,
+            shape: Tuple[IntLike, ...], /, *,
+            precision: PrecisionLike = 'double',
+            fft_axes: Optional[Tuple[IntLike,...]] = None
         ):
+
 
         "call Grid contructor"
         Grid[T].__init__(
@@ -141,28 +144,108 @@ class Field(Grid[T]):
         'real space volume element'
         return self._dV
 
-    @property
-    def R(self): 'Deprecated; use self.r instead'; return self.r
-
-    @property
-    def K(self): 'Deprecated; use self.k instead'; return self.k
-
-    @property
-    def dR(self): 'Deprecated; use self.dr instead'; return self.dr
-
-    @property
-    def dK(self): 'Deprecated; use self.dk instead'; return self.dk
-
-    @property
-    def Volume(self): 'Deprecated; use self.volume instead'; return self.volume
-
     def copy(self) -> Self:
         field1 = self.__class__(
-                self.size, self.shape,
-                precision=self._precision,
-                fft_axes=self._fft_axes
+            self.size, self.shape,
+            precision=self._precision,
+            fft_axes=self._fft_axes
         )
         field1.psi[...] = self.psi
         return field1
+
+    @overload
+    @classmethod
+    def from_array(
+        cls, x:np.ndarray, /, *, metadata: dict
+    ) -> Self: ...
+
+    @overload
+    @classmethod
+    def from_array(
+        cls, 
+        x: np.ndarray, /, *,
+        size: SizeLike,
+        precision: PrecisionLike = 'double',
+        fft_axes: Optional[Tuple[IntLike, ...]] = None
+    ) -> Self: ...
+    
+    @classmethod
+    def from_array(cls, x: np.ndarray, /, **kwargs) -> Self:
+        badargs = False
+        if 'metadata' in kwargs.keys():
+            metadata = kwargs['metadata']
+            if len(kwargs.keys()) != 1: badargs = True
+
+            size = metadata['size']
+            precision = metadata['precision']
+            fft_axes = fft_axes = metadata['fft_axes']
+
+            shape = metadata['shape']
+            if x.shape != shape:
+                raise ValueError(
+                        f'Metadata shape {metadata["shape"]} ' +
+                        f'inconsistent with array shape {x.shape}'
+                    )
+        else:
+            if len(kwargs.keys()) != 3: badargs = True
+            size = kwargs['size']
+            precision = kwargs['precision']
+            fft_axes = kwargs['fft_axes']
+
+        if badargs:
+            raise ValueError(f'Invalid keyword arguments: {kwargs}')
+
+        g = cls(size, x.shape, precision=precision, fft_axes=fft_axes)
+        g.psi[...] = x
+        return g
+
+    def metadata(self) -> dict:
+        res = Grid[T].metadata(self)
+        res['size'] = self.size
+        return res
+
+    @classmethod
+    def concat(cls, *metas: dict, axis: int) -> dict:
+        res = Grid[T].concat(*metas, axis=axis)
+
+        sizes = [meta['size'] for meta in metas]
+        shapes = [meta['shape'] for meta in metas]
+
+        size = []
+
+        flag = False
+        for ax, s in enumerate(zip(*sizes)):
+            if ax != axis:
+                if not all([np.isclose(s[0], si, rtol=1e-8, atol=0) for si in s]):
+                    flag = True
+                    break
+                size.append(s[0])
+            else:
+                size.append(sum(s))
+
+        if not all([
+            np.isclose(
+                sizes[0][axis] / shapes[0][axis],
+                size[axis] / shape[axis], rtol=1e-8, atol=0)
+            for size,shape in zip(sizes,shapes)
+        ]):
+            flag = True
+
+        if flag:
+            raise ValueError(
+                f'Incompatible dimensions: \n sizes={sizes}, shapes={shapes}'
+            )
+        res['size'] = size 
+        return res
+
+    @classmethod
+    def transpose(cls, meta: dict, axes: Tuple[int, ...]) -> dict:
+        newmeta = Grid[T].transpose(meta, axes)
+        size = meta['size']
+        newsize = [size[ax] for ax in axes]
+        newmeta['size'] = newsize
+        return newmeta
+
+        
 
 

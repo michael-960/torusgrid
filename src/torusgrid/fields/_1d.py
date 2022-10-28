@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Tuple, TypeVar, overload
 import numpy as np
 import numpy.typing as npt
 
-from ..core import PrecisionLike, FloatLike
+from ..core import PrecisionLike, FloatLike, IntLike, SizeLike
+
+from .. import core
 
 from ..grids import Grid1D
 from ._complex import ComplexField
@@ -19,13 +21,49 @@ if TYPE_CHECKING:
 T = TypeVar('T', np.complexfloating, np.floating)
 
 class Field1D(Field[T], Grid1D):
+    
+    @overload
     def __init__(
-            self, 
-            l: FloatLike, n: int, *,
-            precision: PrecisionStr = 'double'):
+        self,
+        l: FloatLike, n: IntLike, /, *,
+        precision: PrecisionLike = 'double'
+    ): ...
+
+    @overload
+    def __init__(
+        self,
+        size: SizeLike, shape: Tuple[IntLike], /, *,
+        precision: PrecisionLike = 'double'
+    ): ...
+    
+    def __init__(
+        self, 
+        arg1, arg2, /, *,
+        precision: PrecisionLike = 'double',
+        fft_axes=None # for compatibility with base class
+    ):
+        badargs = False
+
+        if fft_axes not in [None, (0,)]:
+            raise ValueError('FFT axis for 1D field should always be None or (0,)')
+
+        if isinstance(arg2, tuple):
+            size = arg1
+            shape = arg2
+        else:
+            size = (arg1,)
+            shape = (arg2,)
+
+        if not core.is_real_sequence(size, 1): badargs = True
+        if not core.is_int_sequence(shape, 1): badargs = True
+
+
+        if badargs:
+            raise ValueError(f'Invalid size & shape arguments for 1D Field: {arg1}, {arg2}')
+
 
         super().__init__(
-            (l,), (n,),
+            size, shape,
             precision=precision, fft_axes=(0,)
         )
 
@@ -57,34 +95,32 @@ class Field1D(Field[T], Grid1D):
     def set_size(self, l: FloatLike, /): ...
     
     @overload
-    def set_size(self, size: Tuple[FloatLike], /): ...
+    def set_size(self, size: SizeLike, /): ...
 
-    def set_size(self, x: Tuple[FloatLike]|FloatLike, /):
-        if isinstance(x, tuple): 
-            Field[T].set_size(self, x)
+    def set_size(self, x):
+        
 
+        if core.is_real_sequence(x, 1):
+            size = x
         else:
-            Field[T].set_size(self, (x,))
+            size = (x,)
 
-    def copy(self) -> Self:
-        f = self.__class__(
-                self.l, self.n,
-                precision=self._precision
-            )
+        if not core.is_real_sequence(size, 1):
+            raise ValueError(f'Invalide size argument for 1D field: {x}')
 
-        f.psi[...] = self.psi
-        return f
+        Field[T].set_size(self, size)
 
 
-#class ComplexField1D(Field1D[np.complexfloating], ComplexField):
+
+
 class ComplexField1D(ComplexField, Field1D[np.complexfloating]):
     """
     1D complex field
     """
 
-# class RealField1D(Field1D[np.floating], RealField):
 class RealField1D(RealField, Field1D[np.floating]):
     """
     1D real field
     """
+
 

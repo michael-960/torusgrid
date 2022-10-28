@@ -7,6 +7,10 @@ from matplotlib import pyplot as plt
 from .fields import ComplexField2D, RealField2D
 from .grids import ComplexGrid
 
+import warnings
+
+warnings.warn('The field_util module is no longer maintained. Use torusgrid.transforms instead', DeprecationWarning)
+
 
 def plot(fields: ComplexField2D|List[ComplexField2D],
         cmap: str='jet', show: bool=True, vlim: Tuple[float, float]=(-1., 1.), 

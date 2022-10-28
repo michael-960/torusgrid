@@ -9,6 +9,8 @@ from . import proxies
 
 from . import dynamics
 
+from . import transforms
+
 
 from .field_util import (
         plot, set_size, liquefy, interface, insert,

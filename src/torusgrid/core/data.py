@@ -1,6 +1,6 @@
 from __future__ import annotations
 from numbers import Number
-from typing import Any, Union, overload
+from typing import Any, overload
 import numpy as np
 
 

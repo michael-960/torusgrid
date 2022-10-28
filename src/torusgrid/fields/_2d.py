@@ -4,7 +4,8 @@ from typing_extensions import Self
 import numpy as np
 import numpy.typing as npt
 
-from ..core import PrecisionStr, FloatLike
+from ..core import FloatLike, IntLike, SizeLike, PrecisionLike
+from .. import core
 
 from ..grids import Grid2D
 from ._complex import ComplexField
@@ -14,15 +15,46 @@ from ._base import Field
 T = TypeVar('T', np.complexfloating, np.floating)
 
 class Field2D(Field[T], Grid2D):
+
+    @overload
+    def __init__(
+        self,
+        lx: FloatLike, ly: FloatLike,
+        nx: IntLike, ny: IntLike, /, *,
+        precision: PrecisionLike = 'double',
+        fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+
+    @overload
+    def __init__(
+        self,
+        size: SizeLike, shape: Tuple[IntLike,IntLike], /, *,
+        precision: PrecisionLike = 'double',
+        fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+
     def __init__(self, 
-            lx: FloatLike, ly: FloatLike,
-            nx: int, ny: int, *,
-            precision: PrecisionStr = 'double',
-            fft_axes: Optional[Tuple[int,...]]=None
-            ):
+        arg1, arg2, arg3=None, arg4=None, /, *,
+        precision: PrecisionLike = 'double',
+        fft_axes: Optional[Tuple[IntLike,...]]=None
+    ):
+        badargs = False
+
+        if isinstance(arg2, tuple):
+            size = arg1
+            shape = arg2
+            if (arg3 is not None) or (arg4 is not None): badargs = True
+        else:
+            size = (arg1, arg2)
+            shape = (arg3, arg4)
+
+        if not core.is_real_sequence(size, 2): badargs = True
+        if not core.is_int_sequence(shape, 2): badargs = True
+
+        if badargs:
+            raise ValueError(f'Invalid size & shape arguments for 2D Field: {arg1}, {arg2}, {arg3}, {arg4}')
+        
 
         super().__init__(
-            (lx, ly), (nx, ny),
+            size, shape, # type: ignore
             precision=precision, fft_axes=fft_axes
         )
 
@@ -77,30 +109,24 @@ class Field2D(Field[T], Grid2D):
     @overload
     def set_size(self, lx: FloatLike, ly: FloatLike, /): ...
     @overload
-    def set_size(self, size: Tuple[FloatLike, FloatLike], /): ...
+    def set_size(self, size: SizeLike, /): ...
 
-    def set_size(self, 
-            x1: Tuple[FloatLike, FloatLike]|FloatLike, 
-            x2: Optional[FloatLike]=None, /):
+    def set_size(self, x1, x2=None, /):
+        badargs = False 
 
-        if isinstance(x1, tuple): 
-            assert x2 is None
-            Field[T].set_size(self, x1)
+        if core.is_real_sequence(x1, 2):
+            if x2 is not None: badargs = True
+            size = x1
         else:
-            assert x2 is not None
-            Field[T].set_size(self, (x1, x2))
+            size = (x1,x2)
 
-    def copy(self) -> Self:
-        f = self.__class__(
-                self.lx, self.ly, 
-                self.nx, self.ny,
-                fft_axes=self.fft_axes,
-                precision=self._precision
-            )
+        if not core.is_real_sequence(size, 2): badargs = True
+        
+        if badargs:
+            raise ValueError(f'Invalid size arguments for 1D field: {x1}, {x2}')
 
-        f.psi[...] = self.psi
-        return f
-
+        Field[T].set_size(self, size) # type: ignore
+            
 
 class ComplexField2D(Field2D[np.complexfloating], ComplexField):
     """
@@ -112,4 +138,7 @@ class RealField2D(Field2D[np.floating], RealField):
     """
     2D real field
     """
+
+
+
 
