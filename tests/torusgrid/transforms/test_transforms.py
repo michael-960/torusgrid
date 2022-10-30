@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Any, List, Sequence, Tuple, Type, cast
+from typing import Tuple, cast
 
-from torusgrid.core.dtypes import FloatingPointPrecision, PrecisionLike, PrecisionStr
+from torusgrid.core.dtypes import PrecisionLike, PrecisionStr
 import torusgrid.misc.testutils as T
 import torusgrid.transforms as tgt
 import torusgrid as tg
@@ -66,7 +66,7 @@ def get_grid(
     
     if size is not None:
         if T.will_overflow(size, shape, prec):
-            pytest.skip(msg='float overflow')
+            pytest.skip(reason='float overflow')
 
     if real:
         shape_ = list(shape)
@@ -100,7 +100,7 @@ class TestGridTransforms:
 
         axes_map = {old_ax: new_ax for new_ax,old_ax in enumerate(axes)}
         with pytest.raises(ValueError):
-            h = tgt.transpose(g)
+            h = tgt.transpose(g, (0,0))
 
         h = tgt.transpose(g, axes)
 
@@ -198,7 +198,7 @@ class TestGridTransforms:
         tol = get_tol(g.precision)
 
         if T.prod(m_factors) * g.numel > config['extend']['max_numel']:
-            pytest.skip(msg='numel after extension too large')
+            pytest.skip(reason='numel after extension too large')
         
         with pytest.raises(ValueError):
             tgt.extend(g, (1, *m_factors))

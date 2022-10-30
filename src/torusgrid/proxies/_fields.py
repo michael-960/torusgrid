@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from ..fields import RealField2D
+from warnings import warn
+from ..fields import RealField2D, ComplexField
 from .. import core
 
 
@@ -38,4 +39,49 @@ class RealField2DNPZ:
                 Lx=data.lx,
                 Ly=data.ly, **kwargs
             )
+
+
+
+
+class ComplexFieldNPZ:
+    @staticmethod
+    def read(path: str, **kwargs) -> ComplexField:
+        with open(path, 'rb') as f:
+            dat = np.load(f, **kwargs)
+
+            psi = dat['psi']
+            size = dat['size']
+            fft_axes = tuple(dat['fft_axes'].tolist())
+
+            precision = core.FloatingPointPrecision.from_dtype(psi.dtype)
+
+            shape = psi.shape
+            field = ComplexField(
+                size,
+                shape, 
+                fft_axes=fft_axes,
+                precision=precision
+            )
+
+            if np.all(np.isreal(psi)):
+                warn('Building ComplexField object with real data', np.ComplexWarning)
+
+            field.psi[...] = psi
+        return field 
+
+    @staticmethod
+    def write(path: str, data: ComplexField, **kwargs) -> None:
+
+        fft_axes = np.array(data.fft_axes, dtype=np.int_)
+        with open(path, 'wb') as f:
+            np.savez(f, 
+                     psi=data.psi, 
+                     size=data.size,
+                     fft_axes=fft_axes)
+
+
+
+
+
+
 

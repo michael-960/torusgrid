@@ -1,9 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Dict, Generic, List, Optional, TypeVar, final
+from typing import TYPE_CHECKING, Callable, Dict, Generic, List, Optional, TypeVar
 
-
-
-from ...core import generic
 
 if TYPE_CHECKING:
     from ..base import Evolver
@@ -24,7 +21,6 @@ def reverse_hook(meth: Callable[Concatenate[EvolverHooks, P], None]):
 
 
 
-@generic
 class EvolverHooks(Generic[T]):
 
     evolver: Evolver[T]

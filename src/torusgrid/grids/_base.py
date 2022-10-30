@@ -2,13 +2,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 
 from typing import TYPE_CHECKING, Generic, Optional, Tuple, TypeVar, TypedDict, Union, overload
+from warnings import warn
 
 import numpy as np
 import numpy.typing as npt
 
 import pyfftw
 
-from ..core import FloatLike, generic, IntLike, PrecisionLike, FloatingPointPrecision
+from ..core import FloatLike, generic, PrecisionLike, FloatingPointPrecision
 
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ T = TypeVar('T', np.complexfloating, np.floating)
 
 
 
-@generic
+# @generic
 class Grid(ABC, Generic[T]):
     """
     Base class for grids.
@@ -32,25 +33,25 @@ class Grid(ABC, Generic[T]):
     _psi_k: npt.NDArray[np.complexfloating]
 
     _precision: FloatingPointPrecision
-    _fft_axes: Tuple[IntLike, ...]
+    _fft_axes: Tuple[int, ...]
 
     def __init__(self, 
-            shape: Tuple[IntLike, ...], /, *,
+            shape: Tuple[int, ...], /, *,
             precision: PrecisionLike='double',
-            fft_axes: Optional[Tuple[IntLike,...]]=None
+            fft_axes: Optional[Tuple[int,...]]=None
         ):
 
         self._precision = FloatingPointPrecision.cast(precision)
 
         if fft_axes is None:
-            self._fft_axes = tuple(np.arange(len(shape)))
+            self._fft_axes = tuple(i for i in range(len(shape)))
         else:
-            self._fft_axes = fft_axes
+            self._fft_axes = tuple(int(a) for a in fft_axes)
 
         self._init_grid_data(shape) # init psi and psi_k
     
     @abstractmethod
-    def _init_grid_data(self, shape: Tuple[IntLike,...]) -> None:
+    def _init_grid_data(self, shape: Tuple[int,...]) -> None:
         """
         Initialize psi and psi_k
         """
@@ -113,14 +114,14 @@ class Grid(ABC, Generic[T]):
         return not (self._fft is None or self._ifft is None)
         
     @property
-    def shape(self): 
+    def shape(self) -> Tuple[int,...]: 
         """
         Return the shape in real space (x-space / time domain etc)
         """
         return self.psi.shape
 
     @property
-    def shape_k(self):
+    def shape_k(self) -> Tuple[int,...]:
         """
         Return the shape in Fourier (k-space / frequency domain etc)
         """
@@ -193,7 +194,6 @@ class Grid(ABC, Generic[T]):
         grid1.psi[...] = self.psi
         return grid1
 
-    
     @overload
     @classmethod
     def from_array(
@@ -206,7 +206,7 @@ class Grid(ABC, Generic[T]):
     def from_array(
         cls, x: np.ndarray, /, *,
         precision: PrecisionLike='double',
-        fft_axes: Optional[Tuple[IntLike, ...]] = None
+        fft_axes: Optional[Tuple[int, ...]] = None
     ) -> Self: ...
 
     @classmethod
@@ -216,9 +216,9 @@ class Grid(ABC, Generic[T]):
             metadata = kwargs['metadata']
             if len(kwargs.keys()) != 1: badargs = True
             precision = metadata['precision']
-            fft_axes = fft_axes = metadata['fft_axes']
+            fft_axes = metadata['fft_axes']
             shape = metadata['shape']
-            if x.shape != shape:
+            if x.shape != tuple(shape):
                 raise ValueError(
                         f'Metadata shape {metadata["shape"]} ' +
                         f'inconsistent with array shape {x.shape}'
@@ -231,7 +231,10 @@ class Grid(ABC, Generic[T]):
         if badargs:
             raise ValueError(f'Invalid keyword arguments: {kwargs}')
 
-        g = cls(x.shape, precision=precision, fft_axes=fft_axes)
+        g = cls(x.shape,
+                precision=FloatingPointPrecision.cast(precision),
+                fft_axes=fft_axes)
+
         g.psi[...] = x
         return g
 
@@ -239,7 +242,7 @@ class Grid(ABC, Generic[T]):
         """
         Everything except the data itself
         """
-        return dict(precision=self.precision,
+        return dict(precision=self.precision.name,
                     shape=self.shape,
                     fft_axes=self.fft_axes)
 
@@ -248,12 +251,15 @@ class Grid(ABC, Generic[T]):
         """
         Concatenate metadata dicts.
         """
-
         precisions = [meta['precision'] for meta in metas]
-
         precision = FloatingPointPrecision.most_precise(*precisions)
-
         shapes = [meta['shape'] for meta in metas]
+    
+        fft_axes = [meta['fft_axes'] for meta in metas]
+
+        if not fft_axes[1:] == fft_axes[:-1]:
+            warn(f'Not all FFT axes are the same: {fft_axes}, the first will be used.')
+
 
         flag = False
         shape = []
@@ -274,7 +280,7 @@ class Grid(ABC, Generic[T]):
             raise ValueError(f'Shapes not concatenatable: {shapes}')
 
         return dict(
-            precision=precision,
+            precision=precision.name,
             shape=tuple(shape),
             fft_axes=metas[0]['fft_axes']
         )

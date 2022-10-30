@@ -6,7 +6,7 @@ from pyfftw import pyfftw
 import warnings
 
 
-from ..core import get_complex_dtype, get_real_dtype, IntLike
+from ..core import get_complex_dtype, get_real_dtype
 from ._base import Grid
 
 
@@ -18,7 +18,7 @@ class RealGrid(Grid[np.floating]):
     The generic type variables are the dtypes of self.psi & self.psi_k.
     """
     @final
-    def _init_grid_data(self, shape: Tuple[IntLike, ...]):
+    def _init_grid_data(self, shape: Tuple[int, ...]):
 
         last_axis = self._fft_axes[-1]
 

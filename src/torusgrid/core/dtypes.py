@@ -19,15 +19,13 @@ class FloatingPointPrecision(Enum):
         if isinstance(precision, FloatingPointPrecision):
             return precision
 
-        if isinstance(precision, str):
-            precision_ = precision.upper()
-            return {
-                'SINGLE': cls.SINGLE,
-                'DOUBLE': cls.DOUBLE,
-                'LONGDOUBLE': cls.LONGDOUBLE,
-            }[precision_]
 
-        raise ValueError(f'Invalid precision: {precision}')
+        precision_ = str(precision).upper()
+        return {
+            'SINGLE': cls.SINGLE,
+            'DOUBLE': cls.DOUBLE,
+            'LONGDOUBLE': cls.LONGDOUBLE,
+        }[precision_]
 
     @classmethod
     def from_dtype(cls, dtype) -> Self:
@@ -43,12 +41,11 @@ class FloatingPointPrecision(Enum):
         raise ValueError(f'Unrecognized dtype: {dtype}')
 
     @classmethod
-    def most_precise(cls, *precisions: Self) -> Self:
+    def most_precise(cls, *precisions: PrecisionLike) -> Self:
         """
         Return the most precise precision among all
         """
-        if not all([isinstance(p, FloatingPointPrecision) for p in precisions]):
-            raise TypeError(f'Invalid precisions: {precisions}')
+        precisions = tuple(cls.cast(p) for p in precisions)
         
         for precision in [cls.LONGDOUBLE, cls.DOUBLE, cls.SINGLE]:
             if precision in precisions:

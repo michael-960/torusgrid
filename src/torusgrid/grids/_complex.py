@@ -8,7 +8,7 @@ import pyfftw
 
 
 
-from ..core import get_complex_dtype, IntLike
+from ..core import get_complex_dtype
 
 from ._base import Grid
 
@@ -20,7 +20,8 @@ class ComplexGrid(Grid[np.complexfloating]):
     grid. 
     """
     @final
-    def _init_grid_data(self, shape: Tuple[IntLike, ...]):
+    def _init_grid_data(self, shape: Tuple[int, ...]):
+        np.zeros
         self._psi = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
         self._psi_k = pyfftw.zeros_aligned(shape, dtype=get_complex_dtype(self._precision))
 

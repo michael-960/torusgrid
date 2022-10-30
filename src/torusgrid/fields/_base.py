@@ -1,12 +1,13 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, TypeVar, final, overload
+from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, final, overload
 
 import numpy as np
 import numpy.typing as npt
 
+from torusgrid.core.dtypes import FloatingPointPrecision
 
-from ..core import get_real_dtype, PrecisionLike, NPFloat, SizeLike, IntLike
+from ..core import get_real_dtype, PrecisionLike, NPFloat, SizeLike
 
 from ..grids import Grid
 
@@ -32,17 +33,18 @@ class Field(Grid[T]):
     _volume: NPFloat
     _dV: NPFloat
 
-
     def __init__(self,
             size: SizeLike,
-            shape: Tuple[IntLike, ...], /, *,
+            shape: Tuple[int, ...], /, *,
             precision: PrecisionLike = 'double',
-            fft_axes: Optional[Tuple[IntLike,...]] = None
+            fft_axes: Optional[Tuple[int,...]] = None
         ):
-
+        """
+        . 
+        """
 
         "call Grid contructor"
-        Grid[T].__init__(
+        Grid.__init__(
             self, shape,
             precision=precision, 
             fft_axes=fft_axes
@@ -166,7 +168,7 @@ class Field(Grid[T]):
         x: np.ndarray, /, *,
         size: SizeLike,
         precision: PrecisionLike = 'double',
-        fft_axes: Optional[Tuple[IntLike, ...]] = None
+        fft_axes: Optional[Tuple[int, ...]] = None
     ) -> Self: ...
     
     @classmethod
@@ -181,7 +183,7 @@ class Field(Grid[T]):
             fft_axes = fft_axes = metadata['fft_axes']
 
             shape = metadata['shape']
-            if x.shape != shape:
+            if x.shape != tuple(shape):
                 raise ValueError(
                         f'Metadata shape {metadata["shape"]} ' +
                         f'inconsistent with array shape {x.shape}'
@@ -195,18 +197,22 @@ class Field(Grid[T]):
         if badargs:
             raise ValueError(f'Invalid keyword arguments: {kwargs}')
 
-        g = cls(size, x.shape, precision=precision, fft_axes=fft_axes)
+        g = cls(size, 
+                x.shape, 
+                precision=FloatingPointPrecision.cast(precision),
+                fft_axes=fft_axes)
+
         g.psi[...] = x
         return g
 
     def metadata(self) -> dict:
-        res = Grid[T].metadata(self)
+        res = Grid.metadata(self)
         res['size'] = self.size
         return res
 
     @classmethod
     def concat(cls, *metas: dict, axis: int) -> dict:
-        res = Grid[T].concat(*metas, axis=axis)
+        res = Grid.concat(*metas, axis=axis)
 
         sizes = [meta['size'] for meta in metas]
         shapes = [meta['shape'] for meta in metas]
@@ -240,12 +246,11 @@ class Field(Grid[T]):
 
     @classmethod
     def transpose(cls, meta: dict, axes: Tuple[int, ...]) -> dict:
-        newmeta = Grid[T].transpose(meta, axes)
+        newmeta = Grid.transpose(meta, axes)
         size = meta['size']
         newsize = [size[ax] for ax in axes]
         newmeta['size'] = newsize
         return newmeta
 
         
-
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Tuple, TypeVar, overload
 import numpy as np
 import numpy.typing as npt
 
-from ..core import PrecisionLike, FloatLike, IntLike, SizeLike
+from ..core import PrecisionLike, FloatLike, SizeLike
 
 from .. import core
 
@@ -25,14 +25,14 @@ class Field1D(Field[T], Grid1D):
     @overload
     def __init__(
         self,
-        l: FloatLike, n: IntLike, /, *,
+        l: FloatLike, n: int, /, *,
         precision: PrecisionLike = 'double'
     ): ...
 
     @overload
     def __init__(
         self,
-        size: SizeLike, shape: Tuple[IntLike], /, *,
+        size: SizeLike, shape: Tuple[int], /, *,
         precision: PrecisionLike = 'double'
     ): ...
     
@@ -60,7 +60,6 @@ class Field1D(Field[T], Grid1D):
 
         if badargs:
             raise ValueError(f'Invalid size & shape arguments for 1D Field: {arg1}, {arg2}')
-
 
         super().__init__(
             size, shape,

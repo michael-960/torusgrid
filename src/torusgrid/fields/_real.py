@@ -13,6 +13,12 @@ from ._base import Field
 class RealField(Field[np.floating], RealGrid):
     def _update_coordinate_vars(self) -> None:
         R, K, DR, DK = [], [], [], []
+
+        self._R.setflags(write=True)
+        self._K.setflags(write=True)
+        self._dR.setflags(write=True)
+        self._dK.setflags(write=True)
+
         for i in range(self.rank):
             if i == self.last_fft_axis:
                 r, k, dr, dk = generate_xk(self.size[i], self.shape[i], 
@@ -29,4 +35,9 @@ class RealField(Field[np.floating], RealGrid):
         self._K[...] = np.meshgrid(*K, indexing='ij')
         self._dR[...] = np.array(DR)
         self._dK[...] = np.array(DK)
+
+        self._R.setflags(write=False)
+        self._K.setflags(write=False)
+        self._dR.setflags(write=False)
+        self._dK.setflags(write=False)
 

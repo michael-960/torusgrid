@@ -7,7 +7,6 @@ import numpy as np
 from torusgrid.core.dtypes import PrecisionLike
 
 
-from ..core import PrecisionStr, IntLike
 from ._base import Grid
 from ._complex import ComplexGrid
 from ._real import RealGrid
@@ -17,19 +16,19 @@ T = TypeVar('T', np.complexfloating, np.floating)
 
 class Grid2D(Grid[T]):
     @overload
-    def __init__(self, nx: IntLike, ny: IntLike, /, *, 
+    def __init__(self, nx: int, ny: int, /, *, 
                  precision: PrecisionLike = 'double', 
-                 fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+                 fft_axes: Optional[Tuple[int,...]]=None): ...
 
     @overload
-    def __init__(self, shape: Tuple[IntLike,IntLike], /, *,
+    def __init__(self, shape: Tuple[int,int], /, *,
                  precision: PrecisionLike = 'double', 
-                 fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+                 fft_axes: Optional[Tuple[int,...]]=None): ...
 
     def __init__(
         self, arg1, arg2=None, /, *,
         precision: PrecisionLike = 'double', 
-        fft_axes: Optional[Tuple[IntLike,...]]=None):
+        fft_axes: Optional[Tuple[int,...]]=None):
 
         badargs = False
 

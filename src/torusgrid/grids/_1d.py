@@ -4,7 +4,7 @@ from typing_extensions import Self
 
 import numpy as np
 
-from torusgrid.core.dtypes import IntLike, PrecisionLike
+from torusgrid.core.dtypes import PrecisionLike
 
 
 from ..core import PrecisionStr
@@ -20,7 +20,7 @@ class Grid1D(Grid[T]):
     @overload
     def __init__(self, n: int, /, *, precision: PrecisionLike = 'double'): ...
     @overload
-    def __init__(self, shape: Tuple[IntLike], /, *, precision: PrecisionLike = 'double'): ...
+    def __init__(self, shape: Tuple[int], /, *, precision: PrecisionLike = 'double'): ...
 
     def __init__(
         self, arg, /, *,

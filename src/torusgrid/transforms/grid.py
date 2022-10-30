@@ -52,7 +52,7 @@ def transpose(grid: T, axes: Sequence[int]) -> T:
 
     """
     cls = grid.__class__
-    if grid.rank != len(axes):
+    if sorted(tuple(axes)) != sorted(range(grid.rank)):
         raise ValueError(f'Received axes {axes} but input grid has rank {grid.rank}')
 
     newpsi = np.transpose(grid.psi.copy(), axes)

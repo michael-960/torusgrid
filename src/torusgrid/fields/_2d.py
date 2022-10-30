@@ -4,7 +4,7 @@ from typing_extensions import Self
 import numpy as np
 import numpy.typing as npt
 
-from ..core import FloatLike, IntLike, SizeLike, PrecisionLike
+from ..core import FloatLike, SizeLike, PrecisionLike
 from .. import core
 
 from ..grids import Grid2D
@@ -20,21 +20,21 @@ class Field2D(Field[T], Grid2D):
     def __init__(
         self,
         lx: FloatLike, ly: FloatLike,
-        nx: IntLike, ny: IntLike, /, *,
+        nx: int, ny: int, /, *,
         precision: PrecisionLike = 'double',
-        fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+        fft_axes: Optional[Tuple[int,...]]=None): ...
 
     @overload
     def __init__(
         self,
-        size: SizeLike, shape: Tuple[IntLike,IntLike], /, *,
+        size: SizeLike, shape: Tuple[int,int], /, *,
         precision: PrecisionLike = 'double',
-        fft_axes: Optional[Tuple[IntLike,...]]=None): ...
+        fft_axes: Optional[Tuple[int,...]]=None): ...
 
     def __init__(self, 
         arg1, arg2, arg3=None, arg4=None, /, *,
         precision: PrecisionLike = 'double',
-        fft_axes: Optional[Tuple[IntLike,...]]=None
+        fft_axes: Optional[Tuple[int,...]]=None
     ):
         badargs = False
 
