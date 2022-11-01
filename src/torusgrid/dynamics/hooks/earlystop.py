@@ -2,31 +2,34 @@ from __future__ import annotations
 from abc import abstractmethod
 from textwrap import dedent
 
-
-from typing import Callable, Literal, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, Literal, Optional, TypeVar
 
 import rich
-from rich.box import MINIMAL
 from rich.console import Group, RenderableType
 from rich.panel import Panel
-from rich.progress import Progress
-from torusgrid.dynamics.hooks.base import EvolverHooks
+
+
+from .base import EvolverHooks
+from ...core import FloatLike
 
 
 import numpy as np
 
 from torusgrid.misc.console import make_progress_bar
 
-
-T = TypeVar('T')
+if TYPE_CHECKING:
+    from ..base import Evolver
+    T = TypeVar('T', bound=Evolver)
+else:
+    T = TypeVar('T')
 
 
 class EarlyStopping(EvolverHooks[T]):
-    '''
+    """
     Stops the evolver when self.condition() returns true enough times
-    '''
+    """
     def __init__(self, 
-            patience: float, *,
+            patience: int, *,
             cumulative: bool=False,
             period: int=1,
             verbose: bool=True,
@@ -62,7 +65,6 @@ class EarlyStopping(EvolverHooks[T]):
             self.panel.renderable = Group(self.panel.renderable, self.pbar)
 
 
-
     def on_step(self, step: int):
         if step % self.check_period == 0:
             if self.condition():
@@ -90,24 +92,24 @@ class EarlyStopping(EvolverHooks[T]):
 
 
 class DetectSlow(EarlyStopping[T]):
-    def __init__(self, 
-            target: Callable[[T], float] | str,
-            rtol: float, atol: float,
-            monotone: Literal['increase', 'decrease', 'ignore'],
-            patience: float, *, 
-            cumulative: bool = False,
-            period: int = 1, 
-            verbose: bool = True,
-            show_progress: bool = True
-            ):
-        '''
+    """
         Monitor a value (via target), and stop the evolver when the value
         changes sufficiently slowly.
 
         target can be either a function (T) -> float or a string. If a string
         is provided, evolve.data[target] will be used.
-        '''
-
+    """
+    def __init__(self, 
+            target: Callable[[T], float] | str,
+            rtol: FloatLike, atol: FloatLike,
+            patience: int, *, 
+            monotone: Literal['increase', 'decrease', 'ignore'] = 'ignore',
+            cumulative: bool = False,
+            period: int = 1, 
+            verbose: bool = True,
+            show_progress: bool = True
+            ):
+        
         super().__init__(patience, 
                 cumulative=cumulative,
                 period=period,
@@ -137,13 +139,13 @@ class DetectSlow(EarlyStopping[T]):
         super().enter_()
 
     def get_monitor_target(self):
-        return self._target
+        return f'{self._target} rtol={self.rtol} atol={self.atol}'
 
     def on_start(self, n_steps: int, n_epochs: Optional[int]):
         self._badness = 0
         self._val_prev = None
 
-    def condition(self):
+    def condition(self) -> bool:
         if isinstance(self.target, str):
             val: float = self.evolver.data[self.target]
         else:
@@ -153,7 +155,6 @@ class DetectSlow(EarlyStopping[T]):
 
         if self._val_prev is not None:
             cond = self.compare(val, self._val_prev)
-
 
         self._val_prev = val
 

@@ -7,7 +7,8 @@ from ..fields import RealField2D
 
 def plot_2d(
     ax: plt.Axes, field: RealField2D, *,
-    cmap: str='jet', colorbar: bool=True,
+    colorbar: bool = True,
+    cmap: str='jet',
     vmin: FloatLike|None=None,
     vmax: FloatLike|None=None,
 ):
@@ -16,7 +17,9 @@ def plot_2d(
     """
     mesh = ax.pcolormesh(field.x, field.y, field.psi,
                          cmap=cmap, vmin=vmin, vmax=vmax)
+    ax.set_aspect('equal')
+
     if colorbar:
-        plt.colorbar(mesh, ax, orientation='horizontal')
+        plt.colorbar(mesh, ax=ax)
 
     return mesh

@@ -149,3 +149,42 @@ def is_int_sequence(x: Any, length: int|None = None) -> bool:
     except ValueError:
         return False
 
+
+
+def float_fmt(
+    x: FloatLike, 
+    digits: int, sign: bool = True,
+):
+    """
+    Scientific notation of a float number
+    """
+    s = np.format_float_scientific(x, precision=digits, min_digits=digits, sign=sign)
+    return s
+
+
+def highlight_last_digits(
+    formatted_float: str,
+    digits: int,
+    highlight=('(', ')')
+):
+    """
+    """
+    
+    a, e = formatted_float.split('e')
+    
+    if isinstance(highlight, tuple):
+        l = highlight[0]
+        r = highlight[1]
+
+    elif isinstance(highlight, str):
+        l = f'[{highlight}]'
+        r = f'[/{highlight}]'
+    else:
+        raise ValueError(f'Invalid highlight method: {highlight}')
+
+    a = a[:-digits] + l + a[-digits:] + r
+
+    return f'{a}e{e}'
+
+
+

@@ -9,9 +9,9 @@ T = TypeVar('T')
 
 
 class TemporalEvolver(Evolver[T]):
-    '''
+    """
     For evolvers associated with time steps
-    '''
+    """
     def __init__(self, subject: T, dt: FloatLike):
         super().__init__(subject)
         self.dt = dt
@@ -20,5 +20,9 @@ class TemporalEvolver(Evolver[T]):
     def set_age(self, age: FloatLike):
         self.age = age
         self.data['age'] = age
+
+    def start(self) -> None:
+        super().start()
+        self.data['dt'] = self.dt
 
 

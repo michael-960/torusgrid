@@ -1,4 +1,4 @@
-from .base import Evolver
+from .base import Evolver, GridEvolver, FieldEvolver
 
 from .hooks import *
 

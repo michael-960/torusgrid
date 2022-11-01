@@ -252,5 +252,15 @@ class Field(Grid[T]):
         newmeta['size'] = newsize
         return newmeta
 
-        
+    @classmethod        
+    def crop(cls, meta: dict, axis: int, a: int, b: int) -> dict:
+        oldshape = meta['shape']
+        newmeta = super().crop(meta, axis, a, b)
+        newsize = meta.copy()['size']
+        newsize[axis] = newsize[axis] * (b-a) / oldshape[axis]
+        newmeta['size'] = newsize
+        return newmeta
+
+
+
 

@@ -1,12 +1,15 @@
-from typing import Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 from torusgrid.dynamics.hooks.base import EvolverHooks
 import time
 
 from ...misc import console
 import rich
 
-
-T = TypeVar('T')
+if TYPE_CHECKING:
+    from ..base import Evolver
+    T = TypeVar('T', bound=Evolver)
+else:
+    T = TypeVar('T')
 
 class DefaultHooks(EvolverHooks[T]):
     def on_start(self, n_steps: int, n_epochs: Optional[int]):

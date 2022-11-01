@@ -8,7 +8,8 @@ from .dtypes import (PrecisionLike, PrecisionStr,
                      FloatingPointPrecision,
                      get_real_dtype, get_complex_dtype, get_dtype,
                      is_real_scalar, is_int_scalar,
-                     is_real_sequence, is_int_sequence
+                     is_real_sequence, is_int_sequence,
+                     float_fmt, highlight_last_digits
                      )
 
 from .fourier import generate_xk

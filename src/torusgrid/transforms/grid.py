@@ -3,14 +3,13 @@ from warnings import warn
 
 from typing import Literal, Optional, Sequence
 
-from ..core import FloatLike, ComplexLike
+from ..core import FloatLike, ComplexLike, PrecisionLike, FloatingPointPrecision
 from ..grids import Grid
 
 from typing import Tuple, TypeVar
 import numpy as np
 
 import skimage.transform as skt
-
 
 T = TypeVar('T', bound=Grid)
 
@@ -61,26 +60,16 @@ def transpose(grid: T, axes: Sequence[int]) -> T:
     return y
 
 
-def concat(grid1: T, grid2: T, axis: int) -> T:
+def concat(*grids: T, axis: int) -> T:
     """
     Concatenate two grids along an axis
     """
-    cls1 = grid1.__class__
-    cls2 = grid2.__class__
-
-    if cls1 is not cls2:
+    clss = [type(grid) for grid in grids]
+    if clss[1:] != clss[:-1]:
         raise ValueError('input grids must be of the same type')
-
-    if grid1.fft_axes != grid2.fft_axes:
-        warn(
-            'Input grids have different FFT axes:'+ 
-            f'{grid1.fft_axes} and {grid2.fft_axes}, '+
-            'the first set of axes will be used.'
-        )
-
-    newpsi = np.concatenate([grid1.psi, grid2.psi], axis=axis)
-    newmeta = cls1.concat(grid1.metadata(), grid2.metadata(), axis=axis)
-    z = cls1.from_array(newpsi, metadata=newmeta)
+    newpsi = np.concatenate([grid.psi for grid in grids], axis=axis)
+    newmeta = clss[0].concat(*[grid.metadata() for grid in grids], axis=axis)
+    z = clss[0].from_array(newpsi, metadata=newmeta)
     return z
 
 
@@ -165,6 +154,39 @@ def resample(grid: T, shape: Tuple[int,...], *,
                             anti_aliasing=anti_aliasing)
 
     return cls.from_array(newpsi, metadata=metadata)
+
+
+def change_precision(grid: T, precision: PrecisionLike) -> T:
+    """
+    Change the precision
+    """
+    cls = type(grid)
+    metadata = grid.metadata().copy()
+    metadata['precision'] = FloatingPointPrecision.cast(precision).name
+
+    return cls.from_array(grid.psi, metadata=metadata)
+
+
+def crop(grid: T, axis: int, a: int, b: int) -> T:
+    """
+    Crop input grid along the given axis 
+
+    Parameters:
+        a: start index (inclusive)
+        b: end index (exclusive)
+    """
+    cls = type(grid)
+    
+    slices = tuple(slice(None) if a != axis else slice(a,b) for a in range(grid.rank))
+    newpsi = grid.psi.copy()[slices]
+
+    newmeta = cls.crop(grid.metadata.copy(), axis, a, b)
+
+    return cls.from_array(newpsi, metadata=newmeta)
+
+
+
+
 
 
 

@@ -6,6 +6,7 @@ from typing import List, Protocol, TypeVar
 from ...core import FloatLike
 from .temporal import TemporalEvolver
 from ...grids import Grid
+from ..base import GridEvolver
 
 
 T = TypeVar('T', bound=Grid)
@@ -15,14 +16,16 @@ class Step(Protocol):
     def __call__(self, dt: FloatLike) -> None: ...
 
 
-class SplitStep(TemporalEvolver[T]):
+class SplitStep(TemporalEvolver[T], GridEvolver[T]):
+    """
+    Split-step algorithms.
+    
+    Subclasses must implement:
+        - get_realspace_steps
+        - get kspace_steps
+    """
     def __init__(self, grid: T, dt: FloatLike):
         super().__init__(grid, dt)
-        self.grid = self.subject
-        '''
-        Here self.grid == self.subject
-        '''
-
         self.realspace_steps = self.get_realspace_steps()
         self.kspace_steps = self.get_kspace_steps()
 
@@ -54,7 +57,5 @@ class SplitStep(TemporalEvolver[T]):
 
         for step in self.realspace_steps[::-1]:
             step(self.dt/2)
-
-
 
 

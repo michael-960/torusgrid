@@ -1,21 +1,26 @@
 from __future__ import annotations
 
 
-from typing import TYPE_CHECKING, Callable, Dict, Literal, TypeVar
-from torusgrid.dynamics.hooks.base import EvolverHooks
+from typing import TYPE_CHECKING, Callable, Dict, TypeVar
+from ...core.dtypes import FloatLike
+from ..hooks.base import EvolverHooks
 
 
 if TYPE_CHECKING:
-    from torusgrid.dynamics.base import Evolver
+    from ..base import Evolver
+    T = TypeVar('T', bound=Evolver)
+else:
+    T = TypeVar('T')
 
 
-
-T = TypeVar('T')
 
 class MonitorValues(EvolverHooks[T]):
+    """
+    Monitor values/expressions and store them into evolver's data field.
+    """
     def __init__(self, 
-            target: Dict[str, Callable[[Evolver[T]], float|None]] | 
-                    Callable[[Evolver[T]], Dict[str, float|None]],
+            target: Dict[str, Callable[[T], FloatLike|None]] | 
+                    Callable[[T], Dict[str, FloatLike|None]],
             *, 
             period: int=1) -> None:
         super().__init__()

@@ -8,4 +8,4 @@ from .earlystop import EarlyStopping, DetectSlow
 
 from .monitor import MonitorValues
 
-from .menu import Menu
+from .interrupt import Menu, ExitOnInterrupt

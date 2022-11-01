@@ -1,4 +1,5 @@
-from typing import Optional, TypeVar
+from __future__ import annotations
+from typing import Any, Callable, Dict, Optional, TypeVar
 import rich
 
 from rich.align import AlignMethod
@@ -20,11 +21,11 @@ T = TypeVar('T')
 
 
 class Display(EvolverHooks):
-    '''
+    """
     Provide evolver.data with a live diplay object that can be accessed via
     evolver.data['__live__']
 
-    '''
+    """
     def __init__(self): ...
     
     def on_start(self, n_steps, n_epochs):
@@ -45,27 +46,24 @@ class Display(EvolverHooks):
         del self.evolver.data['__live__']
         del self.live
 
-    def pre_interrupt(self):
-        ...
-
-    def on_interrupt(self):
-        ...
-
-    def post_interrupt(self):
-        ...
-        # self.live = Live('', console=rich.get_console())
-        # self.evolver.data['__live__'] = self.live
-        # self.live.__enter__()
-        #
 
 class Panel(EvolverHooks):
-    def __init__(self, title: str='', title_align: AlignMethod='center', **kwargs) -> None:
+    """
+    Draw a panel on __live__. A Display object must be present before applying
+    a Panel instance.
+    """
+    def __init__(self, 
+                 title: str | Callable[[Dict[str,Any]], str]='', 
+                 title_align: AlignMethod='center', **kwargs) -> None:
         self.title = title
         self.title_align: AlignMethod = title_align
         self.kwargs = kwargs
 
     def get_title(self):
-        return self.title.format(**self.evolver.data)
+        if isinstance(self.title, str):
+            return self.title.format(**self.evolver.data)
+        else:
+            return self.title(self.evolver.data).format(**self.evolver.data)
 
     def on_start(self, 
             n_steps: int, n_epochs: Optional[int]):
@@ -88,8 +86,8 @@ class Panel(EvolverHooks):
 
 
 class Progress(EvolverHooks):
-    '''
-    '''
+    """
+    """
     def __init__(self, pbar_text: str, *, period: int=1):
         self.pbar_text = pbar_text
         self.period = period
@@ -113,15 +111,20 @@ class Progress(EvolverHooks):
 
 
 class Text(EvolverHooks):
-    '''
-
-    '''
-    def __init__(self, text: str, *, period: int=1) -> None:
+    """
+    Display a text message on __panel__. A Panel object must be present before applying
+    a Text instance.
+    """
+    def __init__(self, text: str | Callable[[Dict[str,Any]], str], 
+                 *, period: int=1) -> None:
         self._text = text
         self.period = period
 
-    def get_text(self):
-        return self._text.format(**self.evolver.data)
+    def get_text(self) -> str:
+        if isinstance(self._text, str):
+            return self._text.format(**self.evolver.data)
+
+        return self._text(self.evolver.data).format(**self.evolver.data)
 
     def on_start(self, n_steps: int, n_epochs: Optional[int]):
         self.panel: Panel_ = self.evolver.data['__panel__']
@@ -133,5 +136,5 @@ class Text(EvolverHooks):
     def on_step(self, step: int):
         if step % self.period == 0:
             self.textpanel.renderable = self.get_text()
-    
+
 

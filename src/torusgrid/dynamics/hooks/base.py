@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Callable, Dict, Generic, List, Optional, TypeV
 if TYPE_CHECKING:
     from ..base import Evolver
     from typing_extensions import Concatenate, ParamSpec
-
     P = ParamSpec('P')
-T = TypeVar('T')
+    T = TypeVar('T', bound=Evolver)
+else:
+    T = TypeVar('T')
 
 __hook_methods: Dict[str, bool] = {}
 
@@ -22,8 +23,12 @@ def reverse_hook(meth: Callable[Concatenate[EvolverHooks, P], None]):
 
 
 class EvolverHooks(Generic[T]):
+    """
+    Hooks called during evolution. The generic type T refers to the evolver
+    class.
+    """
 
-    evolver: Evolver[T]
+    evolver: T
 
     def on_start(self, n_steps: int, n_epochs: Optional[int]): ...
 
@@ -37,10 +42,10 @@ class EvolverHooks(Generic[T]):
 
     @hook
     def on_multisteps_start(self, n_steps: int, n_epochs: int):
-        '''
+        """
         Called before multistep evolution starts.
         self.on_start() is called by default.
-        '''
+        """
         self.on_start(n_steps, n_epochs)
     
     @hook
@@ -49,10 +54,10 @@ class EvolverHooks(Generic[T]):
 
     @hook
     def on_multisteps_step(self, step: int):
-        '''
+        """
         Called every [n_steps] during multistep evolultion. self.on_step() is
         called by default.
-        '''
+        """
         self.on_step(step)
 
 
@@ -62,18 +67,18 @@ class EvolverHooks(Generic[T]):
 
     @reverse_hook
     def on_multisteps_end(self):
-        '''
+        """
         Called after multistep evolution ends.
         self.on_end() is called by default. Call order is reversed.
-        '''
+        """
         self.on_end()
 
     @hook
     def on_nonstop_start(self, n_steps: int):
-        '''
+        """
         Called before nonstop evolution starts.
         self.on_start() is called by default.
-        '''
+        """
         self.on_start(n_steps, None)
 
     @hook
@@ -82,53 +87,53 @@ class EvolverHooks(Generic[T]):
 
     @hook
     def on_nonstop_step(self, step: int):
-        '''
+        """
         Called every [n_steps]. self.on_step() is called by default.
-        '''
+        """
         self.on_step(step)
 
     @reverse_hook
     def nonstop_exit(self, *args):
-        '''
+        """
         Call order is reversed
-        '''
+        """
         self.exit_(*args)
 
     @reverse_hook
     def on_nonstop_end(self):
-        '''
+        """
         Called after nonstop evolution ends.
         self.on_end() is called by default.
         Call order ir reversed.
-        '''
+        """
         self.on_end()
 
     @hook
     def pre_interrupt(self):
-        '''
+        """
         Called when evolver is interrupted and **before**
         the field lock is acquired
-        '''
+        """
 
     @hook
     def on_interrupt(self):
-        '''
+        """
         Called when evolver is interrupted and **after**
         the field lock is acquired.
-        '''
+        """
 
     @reverse_hook
     def post_interrupt(self):
-        '''
+        """
         Called after evolver is interrupted
-        '''
+        """
 
 
     @hook
-    def bind(self, evolver: Evolver[T]):
-        '''
+    def bind(self, evolver: T):
+        """
         Bind evolver to hooks
-        '''
+        """
         self.evolver = evolver
 
     def __add__(self, other: EvolverHooks):  
@@ -137,9 +142,9 @@ class EvolverHooks(Generic[T]):
 
 
 def combine(*hooks: EvolverHooks):
-    '''
+    """
     Combine various hooks
-    '''
+    """
 
     eh = EvolverHooks()
 
@@ -171,11 +176,11 @@ def combine(*hooks: EvolverHooks):
 
 
 def none_or(x: bool|None, y: bool|None):
-    '''
+    """
         True, True/False/None -> True
         False, False/None -> False
         None, None -> None
-    '''
+    """
     if x is None: return y
     if x is True: return True
     if x is False: return y is True

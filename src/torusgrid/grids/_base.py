@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod, abstractproperty
 
-from typing import TYPE_CHECKING, Generic, Optional, Tuple, TypeVar, TypedDict, Union, overload
+from typing import TYPE_CHECKING, Generic, Literal, Optional, Tuple, TypeVar, TypedDict, Union, overload
 from warnings import warn
 
 import numpy as np
@@ -69,26 +69,55 @@ class Grid(ABC, Generic[T]):
         """
         raise RuntimeError('use psi[...] = ... to assign grid data instead')
 
-    def initialize_fft(self, **fftwargs) -> None:
+    def initialize_fft(
+        self, *,
+        threads: int = 1,
+        planning_timelimit: Optional[float]=None,
+        effort: Literal['FFTW_ESTIMATE','FFTW_MEASURE','FFTW_PATIENT','FFTW_EXHAUSTIVE'] = 'FFTW_MEASURE',
+        wisdom_only: bool = False,
+        destroy_input: bool = False,
+        unaligned: bool = False,
+    ) -> None:
         """
         Initialize the FFTW forward and backward plans. By default the
         fourier transform plans are not initialized as it can take a
         considerable amount of time.
 
         Parameters:
-            **fftwargs: keyword arguments to be passed to pyfftw.FFTW()
+            effort: FFTW planning effort
+
+            wisdom_only: Raise an error if no plan for the current transforms is present
+
+            destroy_input: Whether to allow input to be destroyed during
+                           transform, note that for certain transforms the
+                           input is destroyed anyway
+
+            unaligned: Alignment of the data will not be assumed.
 
         """
+
+        flags = tuple([effort]
+                      + ['FFTW_WISDOM_ONLY'] if wisdom_only else []
+                      + ['FFTW_DESTROY_INPUT'] if destroy_input else []
+                      + ['FFTW_UNALIGNED'] if unaligned else []
+                      )
+
+        
         psi_tmp = self.psi.copy()
+
         self._fft = pyfftw.FFTW(
                 self._psi, self._psi_k,
                 direction='FFTW_FORWARD',
-                axes=self._fft_axes, **fftwargs)
+                axes=self._fft_axes,
+                threads=threads, planning_timelimit=planning_timelimit,
+                flags=flags)
 
         self._ifft = pyfftw.FFTW(
                 self._psi_k, self._psi,
                 direction='FFTW_BACKWARD',
-                axes=self._fft_axes, **fftwargs)
+                axes=self._fft_axes,
+                threads=threads, planning_timelimit=planning_timelimit,
+                flags=flags)
 
         # self.set_psi(psi_tmp)
         self.psi[...] = psi_tmp
@@ -285,7 +314,6 @@ class Grid(ABC, Generic[T]):
             fft_axes=metas[0]['fft_axes']
         )
 
-
     @classmethod
     def transpose(cls, meta: dict, axes: Tuple[int,...]) -> dict:
         shape = meta['shape']
@@ -300,6 +328,18 @@ class Grid(ABC, Generic[T]):
 
         newmeta['shape'] = tuple([shape[ax] for ax in axes])
         newmeta['fft_axes'] = tuple([old_new_ax_map[fft_ax] for fft_ax in fft_axes])
+        return newmeta
+
+    @classmethod
+    def crop(cls, meta: dict, axis: int, a: int, b: int) -> dict:
+        shape = meta['shape']
+        if not 0 <= a < b < shape[axis]:
+            raise ValueError(f'Invalid cropping range: shape={shape}, axis={axis}, a={a}, b={b}')
+
+        newmeta = meta.copy()
+        newmeta['shape'] = tuple([(b - a) if ax == axis else shape[ax]
+                                  for ax in range(len(shape))])
+
         return newmeta
 
 

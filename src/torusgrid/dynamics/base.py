@@ -1,21 +1,22 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Type, TypeVar
+from typing_extensions import Self
 
-from .hooks import EvolverHooks, DefaultHooks
+from .hooks.base import EvolverHooks
+from .hooks.default import DefaultHooks
+
+from ..grids import Grid
+from ..fields import Field
 from ..misc import context
-
-from ..core import generic
 
 import threading
 
 import time
 
-T = TypeVar('T')
-
-
 from typing import Generic, Optional
 
+T = TypeVar('T')
 
 class Evolver(ABC, Generic[T]):
     """
@@ -31,7 +32,8 @@ class Evolver(ABC, Generic[T]):
         
         self.data: Dict[str, Any] = {}
         """
-        Used to store fields used by hooks.
+        Used to store fields used by hooks, will be cleared everytime start()
+        is called. I.e., before every evolution.
         """
 
         self.thread: threading.Thread|None = None
@@ -70,7 +72,8 @@ class Evolver(ABC, Generic[T]):
                     break
         hooks.on_multisteps_end()
 
-    def run(self, n_steps: int, hooks: Optional[EvolverHooks]=None):
+    def run(self, n_steps: int,
+            hooks: Optional[EvolverHooks]=None):
         """
         Run evolution loop. 
         hooks.on_nonstop_step() will be called every [n_steps] steps.
@@ -139,6 +142,7 @@ class Evolver(ABC, Generic[T]):
     def start(self) -> None:
         """
         A hook method that is called before evolution
+        When overriden, super().start() should be invoked
         """
         self.data.clear()
 
@@ -153,5 +157,34 @@ class Evolver(ABC, Generic[T]):
             self.thread.join()
 
 
+T_grid = TypeVar('T_grid', bound=Grid)
+
+class GridEvolver(Evolver[T_grid]):
+    @property
+    def grid(self) -> T_grid:
+        """
+        An alias for .subject
+        """
+        return self.subject
+
+
+    def initialize_fft(self, *, reinit: bool = True, **fftwargs):
+        if reinit:
+            self.grid.initialize_fft(**fftwargs)
+        else:
+            if not self.grid.fft_initialized():
+                self.grid.initialize_fft(**fftwargs)
+            else:
+                assert len(fftwargs.keys()) == 0
+
+T_field = TypeVar('T_field', bound=Field)
+
+class FieldEvolver(GridEvolver[T_field]):
+    @property
+    def field(self) -> T_field:
+        """
+        An alias for .subject
+        """
+        return self.subject
 
 
