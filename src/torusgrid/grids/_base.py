@@ -8,8 +8,7 @@ import numpy as np
 import numpy.typing as npt
 
 import pyfftw
-
-from ..core import FloatLike, generic, PrecisionLike, FloatingPointPrecision
+from ..core import FloatLike, PrecisionLike, FloatingPointPrecision, get_real_dtype, FFTWEffort
 
 
 if TYPE_CHECKING:
@@ -73,7 +72,7 @@ class Grid(ABC, Generic[T]):
         self, *,
         threads: int = 1,
         planning_timelimit: Optional[float]=None,
-        effort: Literal['FFTW_ESTIMATE','FFTW_MEASURE','FFTW_PATIENT','FFTW_EXHAUSTIVE'] = 'FFTW_MEASURE',
+        effort: Optional[FFTWEffort] = None,
         wisdom_only: bool = False,
         destroy_input: bool = False,
         unaligned: bool = False,
@@ -96,14 +95,18 @@ class Grid(ABC, Generic[T]):
 
         """
 
-        flags = tuple([effort]
-                      + ['FFTW_WISDOM_ONLY'] if wisdom_only else []
-                      + ['FFTW_DESTROY_INPUT'] if destroy_input else []
-                      + ['FFTW_UNALIGNED'] if unaligned else []
+        flags = tuple( 
+                      ([effort] if effort is not None else [])
+                      + (['FFTW_WISDOM_ONLY'] if wisdom_only else [])
+                      + (['FFTW_DESTROY_INPUT'] if destroy_input else [])
+                      + (['FFTW_UNALIGNED'] if unaligned else [])
                       )
 
         
         psi_tmp = self.psi.copy()
+
+        print(self._fft_axes)
+        print(flags)
 
         self._fft = pyfftw.FFTW(
                 self._psi, self._psi_k,
@@ -119,7 +122,6 @@ class Grid(ABC, Generic[T]):
                 threads=threads, planning_timelimit=planning_timelimit,
                 flags=flags)
 
-        # self.set_psi(psi_tmp)
         self.psi[...] = psi_tmp
 
     def fft(self):
@@ -342,5 +344,11 @@ class Grid(ABC, Generic[T]):
 
         return newmeta
 
+    def zero_(self):
+        """
+        Set all elements of psi to zero
+        psi_k will not be affected
+        """
+        self.psi[...] = get_real_dtype(self.precision)('0.')
 
 

@@ -25,7 +25,7 @@ src/torusgrid/dynamics/hooks/base.py
 src/torusgrid/dynamics/hooks/default.py
 src/torusgrid/dynamics/hooks/display.py
 src/torusgrid/dynamics/hooks/earlystop.py
-src/torusgrid/dynamics/hooks/menu.py
+src/torusgrid/dynamics/hooks/interrupt.py
 src/torusgrid/dynamics/hooks/monitor.py
 src/torusgrid/dynamics/special/__init__.py
 src/torusgrid/dynamics/special/rk4.py

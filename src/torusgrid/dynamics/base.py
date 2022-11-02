@@ -3,12 +3,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Type, TypeVar
 from typing_extensions import Self
 
+
 from .hooks.base import EvolverHooks
 from .hooks.default import DefaultHooks
 
 from ..grids import Grid
 from ..fields import Field
 from ..misc import context
+from ..core import FFTWEffort
 
 import threading
 
@@ -168,14 +170,30 @@ class GridEvolver(Evolver[T_grid]):
         return self.subject
 
 
-    def initialize_fft(self, *, reinit: bool = True, **fftwargs):
+    def initialize_fft(
+        self, *, reinit: bool = True,
+        threads: int = 1,
+        planning_timelimit: Optional[float]=None,
+        effort: Optional[FFTWEffort] = None,
+        wisdom_only: bool = False,
+        destroy_input: bool = False,
+        unaligned: bool = False,
+    ):
+        """
+        Call .grid.initialize_fft() with the same arguments
+        """
+        fftwargs = dict(
+                threads=threads, planning_timelimit=planning_timelimit,
+                effort=effort, wisdom_only=wisdom_only, destroy_input=destroy_input,
+                unaligned=unaligned
+        )
         if reinit:
             self.grid.initialize_fft(**fftwargs)
         else:
             if not self.grid.fft_initialized():
                 self.grid.initialize_fft(**fftwargs)
             else:
-                assert len(fftwargs.keys()) == 0
+                raise TypeError('FFT already initialized')
 
 T_field = TypeVar('T_field', bound=Field)
 

@@ -12,7 +12,7 @@ from .dtypes import (PrecisionLike, PrecisionStr,
                      float_fmt, highlight_last_digits
                      )
 
-from .fourier import generate_xk
+from .fourier import generate_xk, FFTWEffort
 
 from .data import scalarize
 

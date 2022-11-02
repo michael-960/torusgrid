@@ -1,11 +1,14 @@
 
-from typing import Tuple
+from typing import Literal, Tuple
 import numpy as np
 import numpy.typing as npt
 
 import warnings
 
 from .dtypes import PrecisionLike, FloatLike, get_real_dtype
+
+
+FFTWEffort = Literal['FFTW_ESTIMATE', 'FFTW_MEASURE', 'FFTW_PATIENT', 'FFTW_EXHAUSTIVE']
 
 
 def generate_xk(

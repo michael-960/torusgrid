@@ -29,7 +29,7 @@ class SecondOrderRK4(TemporalEvolver[T], GridEvolver[T]):
         self.grid_tmp.initialize_fft()
 
         self.dgrid = self.grid.copy()
-        self.dgrid.set_psi(0)
+        self.dgrid.zero_()
         self.dgrid.initialize_fft()
 
         self.dgrid_tmp = self.dgrid.copy()
