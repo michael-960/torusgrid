@@ -105,9 +105,6 @@ class Grid(ABC, Generic[T]):
         
         psi_tmp = self.psi.copy()
 
-        print(self._fft_axes)
-        print(flags)
-
         self._fft = pyfftw.FFTW(
                 self._psi, self._psi_k,
                 direction='FFTW_FORWARD',
