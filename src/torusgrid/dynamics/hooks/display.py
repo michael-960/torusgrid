@@ -26,10 +26,11 @@ class Display(EvolverHooks):
     evolver.data['__live__']
 
     """
-    def __init__(self): ...
+    def __init__(self, fps: int=4):
+        self.fps = fps
     
     def on_start(self, n_steps, n_epochs):
-        self.live = Live('', console=rich.get_console())
+        self.live = Live('', console=rich.get_console(), refresh_per_second=self.fps)
         
         if '__live__' in self.evolver.data.keys():
             raise RuntimeError('Only one Display object is allowed')
