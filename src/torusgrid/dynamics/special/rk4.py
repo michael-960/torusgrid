@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Tuple, TypeVar
+from typing import Optional, Tuple, TypeVar
 
 from ..base import GridEvolver
 
-from ...core import FloatLike
+from ...core import FloatLike, FFTWEffort
 from ...grids import Grid
 import numpy.typing as npt
 
@@ -26,15 +26,11 @@ class SecondOrderRK4(TemporalEvolver[T], GridEvolver[T]):
         super().__init__(grid, dt)
     
         self.grid_tmp = self.grid.copy()
-        self.grid_tmp.initialize_fft()
 
         self.dgrid = self.grid.copy()
         self.dgrid.zero_()
-        self.dgrid.initialize_fft()
 
         self.dgrid_tmp = self.dgrid.copy()
-        self.dgrid_tmp.initialize_fft()
-
 
     @abstractmethod
     def psi_dot(self) -> Tuple[npt.NDArray, npt.NDArray]:
@@ -82,10 +78,7 @@ class FirstOrderRK4(TemporalEvolver[T], GridEvolver):
         super().__init__(grid, dt)
     
         self.grid_tmp = self.grid.copy()
-        self.grid_tmp.initialize_fft()
 
-        if not self.grid.fft_initialized():
-            self.grid.initialize_fft()
 
 
 
