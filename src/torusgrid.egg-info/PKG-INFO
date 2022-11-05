@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: torusgrid
-Version: 0.4.5
+Version: 0.4.7
 Summary: periodic fields with definite dimensions equipped with FFT operations
 Home-page: https://github.com/michael-960/torusgrid
 Author: Michael Wang

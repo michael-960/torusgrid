@@ -26,11 +26,15 @@ class SecondOrderRK4(TemporalEvolver[T], GridEvolver[T]):
         super().__init__(grid, dt)
     
         self.grid_tmp = self.grid.copy()
+        # self.grid_tmp.initialize_fft()
 
         self.dgrid = self.grid.copy()
         self.dgrid.zero_()
+        # self.dgrid.initialize_fft()
 
         self.dgrid_tmp = self.dgrid.copy()
+        # self.dgrid_tmp.initialize_fft()
+
 
     @abstractmethod
     def psi_dot(self) -> Tuple[npt.NDArray, npt.NDArray]:

@@ -177,16 +177,11 @@ def crop(grid: T, axis: int, a: int, b: int) -> T:
     """
     cls = type(grid)
     
-    slices = tuple(slice(None) if a != axis else slice(a,b) for a in range(grid.rank))
+    slices = tuple((slice(None) if ax != axis else slice(a,b)) for ax in range(grid.rank))
     newpsi = grid.psi.copy()[slices]
 
-    newmeta = cls.crop(grid.metadata.copy(), axis, a, b)
+    newmeta = cls.crop(grid.metadata().copy(), axis, a, b)
 
     return cls.from_array(newpsi, metadata=newmeta)
-
-
-
-
-
 
 

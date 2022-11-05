@@ -6,6 +6,7 @@ from warnings import warn
 
 import numpy as np
 import numpy.typing as npt
+import copy
 
 import pyfftw
 from ..core import FloatLike, PrecisionLike, FloatingPointPrecision, get_real_dtype, FFTWEffort
@@ -288,7 +289,6 @@ class Grid(ABC, Generic[T]):
         if not fft_axes[1:] == fft_axes[:-1]:
             warn(f'Not all FFT axes are the same: {fft_axes}, the first will be used.')
 
-
         flag = False
         shape = []
     
@@ -317,7 +317,7 @@ class Grid(ABC, Generic[T]):
     def transpose(cls, meta: dict, axes: Tuple[int,...]) -> dict:
         shape = meta['shape']
         fft_axes = meta['fft_axes']
-        newmeta = meta.copy()
+        newmeta = copy.deepcopy(meta)
 
         new_old_ax_map = axes
         old_new_ax_map = [
@@ -332,10 +332,10 @@ class Grid(ABC, Generic[T]):
     @classmethod
     def crop(cls, meta: dict, axis: int, a: int, b: int) -> dict:
         shape = meta['shape']
-        if not 0 <= a < b < shape[axis]:
+        if not 0 <= a < b <= shape[axis]:
             raise ValueError(f'Invalid cropping range: shape={shape}, axis={axis}, a={a}, b={b}')
 
-        newmeta = meta.copy()
+        newmeta = copy.deepcopy(meta)
         newmeta['shape'] = tuple([(b - a) if ax == axis else shape[ax]
                                   for ax in range(len(shape))])
 

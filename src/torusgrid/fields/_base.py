@@ -7,6 +7,10 @@ import numpy.typing as npt
 
 from torusgrid.core.dtypes import FloatingPointPrecision
 
+import copy
+
+
+
 from ..core import get_real_dtype, PrecisionLike, NPFloat, SizeLike
 
 from ..grids import Grid
@@ -225,6 +229,7 @@ class Field(Grid[T]):
                 if not all([np.isclose(s[0], si, rtol=1e-8, atol=0) for si in s]):
                     flag = True
                     break
+
                 size.append(s[0])
             else:
                 size.append(sum(s))
@@ -238,9 +243,12 @@ class Field(Grid[T]):
             flag = True
 
         if flag:
+            dxs = [size[axis]/shape[axis] for size,shape in zip(sizes,shapes)]
             raise ValueError(
-                f'Incompatible dimensions: \n sizes={sizes}, shapes={shapes}'
+                f'Incompatible dimensions: \n sizes={sizes}, shapes={shapes} \n dx={dxs}'
             )
+
+
         res['size'] = size 
         return res
 
@@ -249,18 +257,19 @@ class Field(Grid[T]):
         newmeta = Grid.transpose(meta, axes)
         size = meta['size']
         newsize = [size[ax] for ax in axes]
+
         newmeta['size'] = newsize
         return newmeta
 
     @classmethod        
     def crop(cls, meta: dict, axis: int, a: int, b: int) -> dict:
         oldshape = meta['shape']
-        newmeta = super().crop(meta, axis, a, b)
-        newsize = meta.copy()['size']
+        newmeta = Grid.crop(meta, axis, a, b)
+
+        newsize = copy.deepcopy(meta)['size']
         newsize[axis] = newsize[axis] * (b-a) / oldshape[axis]
+
         newmeta['size'] = newsize
+
         return newmeta
-
-
-
-
+        
