@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, final
-from typing_extensions import Self
+from typing import Tuple, final
 
 import numpy as np
 import pyfftw

@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Tuple, TypeVar, overload
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Tuple, TypeVar, overload
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 import numpy as np
 
 from torusgrid.core.dtypes import PrecisionLike
 
-
-from ..core import PrecisionStr
 
 from ._base import Grid
 from ._complex import ComplexGrid

@@ -1,7 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Type, TypeVar
-from typing_extensions import Self
+from typing import Any, Dict, TypeVar
 
 
 from .hooks.base import EvolverHooks
