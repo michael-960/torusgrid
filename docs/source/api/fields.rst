@@ -1,40 +1,40 @@
 
-Grids
+Fields
 ======
 
-.. autoclass:: torusgrid.Grid
+.. autoclass:: torusgrid.Field
    :show-inheritance:
    :members:
    :inherited-members:
 
-.. autoclass:: torusgrid.Grid1D
+.. autoclass:: torusgrid.Field1D
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.Grid2D
+.. autoclass:: torusgrid.Field2D
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.ComplexGrid
+.. autoclass:: torusgrid.ComplexField
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.RealGrid
+.. autoclass:: torusgrid.RealField
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.ComplexGrid1D
+.. autoclass:: torusgrid.ComplexField1D
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.ComplexGrid2D
+.. autoclass:: torusgrid.ComplexField2D
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.RealGrid1D
+.. autoclass:: torusgrid.RealField1D
    :show-inheritance:
    :members:
 
-.. autoclass:: torusgrid.RealGrid2D
+.. autoclass:: torusgrid.RealField2D
    :show-inheritance:
    :members:
