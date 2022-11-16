@@ -42,8 +42,8 @@ def setup(app):
 
 
 
-inheritance_graph_attrs = dict(rankdir="TD", size='"10.0, 40.0"',
-                               fontsize=40, ratio='expand')
+# inheritance_graph_attrs = dict(rankdir="TD", size='"10.0, 40.0"',
+#                                fontsize=40, ratio='expand')
 
 
 
