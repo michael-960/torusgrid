@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Literal, Type, Union, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Type, TypeAlias, Union, Sequence
 import numpy as np
 import numpy.typing as npt
 from enum import Enum
@@ -57,7 +57,7 @@ class FloatingPointPrecision(Enum):
 
 
 
-PrecisionStr = Literal[
+PrecisionStr: TypeAlias = Literal[
     'SINGLE', 'DOUBLE', 'LONGDOUBLE',
     'single', 'double', 'longdouble',
 ]
@@ -75,7 +75,7 @@ _complex_dtype = {
 }
 
 
-PrecisionLike = Union[FloatingPointPrecision, PrecisionStr]
+PrecisionLike: TypeAlias = Union[FloatingPointPrecision, PrecisionStr]
 """
 A string representing a floating point precision, or an instance of 
 :code:`FloatingPointPrecision`
@@ -102,24 +102,24 @@ def get_dtype(precision: PrecisionLike, *, complex: bool=False):
         return get_real_dtype(precision)
 
 
-NPInt = Union[np.integer, np.int_]
-IntLike = Union[NPInt, int]
+NPInt: TypeAlias = Union[np.integer, np.int_]
+IntLike: TypeAlias = Union[NPInt, int]
 
 
-NPFloat = Union[np.floating, np.float_]
+NPFloat: TypeAlias = Union[np.floating, np.float_]
 'single, double, longdouble, float_'
 
-FloatLike = Union[NPFloat, float]
+FloatLike: TypeAlias = Union[NPFloat, float]
 'single, double, longdouble, float_, float'
 
-NPComplex = Union[np.complexfloating, np.complex_]
+NPComplex: TypeAlias = Union[np.complexfloating, np.complex_]
 'csingle, cdouble, clongdouble, complex_'
 
-ComplexLike = Union[NPComplex, complex]
+ComplexLike: TypeAlias = Union[NPComplex, complex]
 'csingle, cdouble, clongdouble, complex_, complex'
 
 
-SizeLike = Union[Sequence[FloatLike], npt.NDArray[np.floating], npt.NDArray[np.float_]]
+SizeLike: TypeAlias = Union[Sequence[FloatLike], npt.NDArray[np.floating], npt.NDArray[np.float_]]
 
 
 

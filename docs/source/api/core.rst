@@ -11,4 +11,5 @@ Core API
    :annotation:
 
 
+.. autofunction:: torusgrid.generate_xk
 
