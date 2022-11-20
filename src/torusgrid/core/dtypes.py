@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Literal, Type, TypeAlias, Union, Sequence
+
+from typing import TYPE_CHECKING, Any, Literal, Type, Union, Sequence
 import numpy as np
 import numpy.typing as npt
 from enum import Enum
+
+from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
     from typing_extensions import Self
