@@ -13,14 +13,13 @@ def blend(
     b: FloatLike = 0.75,
     interface_width: FloatLike
 ) -> T:
-    """
+    r"""
     Blend two fields along an axis.
 
-    Parameters:
-
-        axis: axis along which to blend the fields
-        a: 0~1
-        b: a~1
+    :param field1, field2: fields to be blended together
+    :param axis: axis along which to blend the fields
+    :param a, b: relative locations of the two interfaces, must satisfy :math:`0 < a < b < 1`
+    :interface_width: interface width, used in the interpolation function :math:`tanh`
 
     """
     assert 0 < a < b < 1

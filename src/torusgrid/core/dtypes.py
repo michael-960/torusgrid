@@ -74,7 +74,13 @@ _complex_dtype = {
     'LONGDOUBLE': np.clongdouble,
 }
 
+
 PrecisionLike = Union[FloatingPointPrecision, PrecisionStr]
+"""
+A string representing a floating point precision, or an instance of 
+:code:`FloatingPointPrecision`
+"""
+
 
 
 def get_real_dtype(

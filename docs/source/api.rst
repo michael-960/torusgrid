@@ -7,4 +7,5 @@ API Reference
     api/grids
     api/fields
     api/transforms
+    api/core
     

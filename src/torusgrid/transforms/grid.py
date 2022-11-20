@@ -14,14 +14,13 @@ import skimage.transform as skt
 T = TypeVar('T', bound=Grid)
 
 
-def extend(grid: T, factors: Tuple[int,...]) -> T:
+def extend(grid: T, factors: Sequence[int])-> T:
     """
-    Extend the grid periodically over all axes
+    Extend the grid periodically over all axes.
 
-    Parameters:
-        x: Any grid
-        factors: (factor0, factor1, ...) are the integer factors by which each
-                   axis is extended
+    :param grid: any grid
+    :param factors: (factor0, factor1, ...) are the integer factors by which each axis is extended
+
     """
     if grid.rank != len(factors):
         raise ValueError(f'Received factors {factors} but input grid has rank {grid.rank}')
@@ -40,14 +39,13 @@ def extend(grid: T, factors: Tuple[int,...]) -> T:
 
 def transpose(grid: T, axes: Sequence[int]) -> T:
     """
-    Transpose the axes of a grid
+    Transpose the axes of a grid.
 
-    Parameters:
-        grid: Any grid
-        axes: A list of integers specifying a permutation of x's axes
+    :param grid: any grid
+    :param axes: a list of integers specifying a permutation of x's axes
 
     Example:
-        If x is a 2D Grid, transpose(x, 1, 0) will flip the X and Y axes
+        If x is a 2D Grid, :code:`transpose(x, [1,0])` will flip the X and Y axes
 
     """
     cls = grid.__class__
@@ -62,7 +60,11 @@ def transpose(grid: T, axes: Sequence[int]) -> T:
 
 def concat(*grids: T, axis: int) -> T:
     """
-    Concatenate two grids along an axis
+    Concatenate grids along an axis.
+
+    :param grids: a series of grid objects of the same type
+    :axis axis: concatenation axis
+
     """
     clss = [type(grid) for grid in grids]
     if clss[1:] != clss[:-1]:
@@ -75,12 +77,12 @@ def concat(*grids: T, axis: int) -> T:
 
 def const_like(grid: T, fill: Optional[FloatLike|ComplexLike]=None) -> T:
     """
-    Return a new grid with constant value
+    Return a new grid with constant value.
     
-    Parameters:
-        x: Any grid
-        fill: The constant fill value. If not specified, the mean of the grid's
-              data will be used instead
+    :param grid: any grid
+    :param fill: The constant fill value. If not specified, the mean of the grid's
+            data will be used instead
+
     """
 
     if fill is None:
@@ -95,6 +97,13 @@ def const_like(grid: T, fill: Optional[FloatLike|ComplexLike]=None) -> T:
 
 
 def flip(grid: T, axes: Sequence[int]) -> T:
+    """
+    Flip grid along the given axes
+
+    :param grid: any grid
+    :param axes: a list of axes to be flipped
+
+    """
 
     if len(axes) != len(set(axes)):
         raise ValueError(f'Duplicate axes: {axes}')
@@ -109,17 +118,23 @@ def flip(grid: T, axes: Sequence[int]) -> T:
     return y
 
 
-def resample(grid: T, shape: Tuple[int,...], *, 
-             order: int, 
-             mode: Literal['constant','edge','symmetric','reflect','wrap']='reflect',
-             cval: int = 0,
-             clip: bool = True,
-             preserve_range: bool = False,
-             anti_aliasing: bool = False
+def resample(
+    grid: T, shape: Tuple[int,...], *, 
+    order: int, 
+    mode: Literal['constant','edge','symmetric','reflect','wrap']='reflect',
+    cval: int = 0,
+    clip: bool = True,
+    preserve_range: bool = False,
+    anti_aliasing: bool = False
 
-             ) -> T:
+) -> T:
     """
     Change the shape and interpolate data
+
+    :param grid: any grid
+    :param shape: new shape
+    :param order, mode, cval, clip, preserve_range, anti_aliasing: see :code:`skimage.resize`
+
     """
     
     if len(shape) != grid.rank:
@@ -159,6 +174,10 @@ def resample(grid: T, shape: Tuple[int,...], *,
 def change_precision(grid: T, precision: PrecisionLike) -> T:
     """
     Change the precision
+
+    :param grid: any grid
+    :param precision: the new precision
+
     """
     cls = type(grid)
     metadata = grid.metadata().copy()
